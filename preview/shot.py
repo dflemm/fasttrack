@@ -8,7 +8,7 @@ async def human_turns(pg, limit):
         st = await pg.evaluate("({turn: __ft.state.turn, win: __ft.state.winner, n: __ft.state.moveCount})")
         if st['win'] is not None or st['n'] > limit: break
         if st['turn'] != 0: continue
-        cards = pg.locator('#hand .card:not([disabled])')
+        cards = pg.locator('#hand .card:not(.off)')
         if await cards.count() == 0: continue
         done = False
         for i in range(await cards.count()):
@@ -29,7 +29,7 @@ async def human_turns(pg, limit):
 
 async def wait_me(pg):
     for _ in range(80):
-        if await pg.evaluate("__ft.state.turn === 0") and await pg.locator('#hand .card:not([disabled])').count(): return
+        if await pg.evaluate("__ft.state.turn === 0") and await pg.locator('#hand .card:not(.off)').count(): return
         await pg.wait_for_timeout(250)
 
 async def overflow(pg):
@@ -48,16 +48,20 @@ async def main():
         await pg.evaluate("__ft.setSpeed('fast'); __ft.newGame(6)")
         await human_turns(pg, 70)
         await wait_me(pg)
-        await pg.locator('#hand .card:not([disabled])').first.click()
+        await pg.locator('#hand .card:not(.off)').first.click()
         await pg.screenshot(path=out + '-desktop.png'); print('desktop', await overflow(pg))
-        await pg.click('#histBtn'); await pg.wait_for_timeout(200)
-        await pg.screenshot(path=out + '-history.png'); await pg.click('#histClose')
-        await pg.click('#optBtn'); await pg.select_option('#themeSel', 'custom'); await pg.wait_for_timeout(100)
-        await pg.fill('#col0', '#ff00aa'); await pg.dispatch_event('#col0', 'input'); await pg.wait_for_timeout(200)
-        await pg.screenshot(path=out + '-options.png'); await pg.click('#optClose')
-        for name, w, h in [('phone', 390, 760), ('landscape', 844, 390), ('small', 360, 640)]:
+        for name, w, h in [('phone', 390, 700), ('landscape', 844, 390)]:
             await pg.set_viewport_size({'width': w, 'height': h}); await pg.wait_for_timeout(400)
             await pg.screenshot(path=out + '-' + name + '.png'); print(name, await overflow(pg))
+        await pg.set_viewport_size({'width': 390, 'height': 700}); await pg.wait_for_timeout(300)
+        await pg.click('#penBtn'); await pg.wait_for_timeout(900)
+        await pg.screenshot(path=out + '-pen.png')
+        n_opts = await pg.locator('#gOver .opt').count()
+        if n_opts: await pg.locator('#gOver .opt').first.click(force=True)
+        print('targets while zoomed:', n_opts, 'zoom', await pg.evaluate("document.getElementById('fitBtn').hidden"))
+        await pg.click('#fitBtn'); await pg.wait_for_timeout(700)
+        await pg.mouse.move(195, 300); await pg.mouse.wheel(0, -400); await pg.wait_for_timeout(200)
+        await pg.screenshot(path=out + '-wheel.png')
         print('moves', await pg.evaluate("__ft.state.moveCount"), 'errors', errors)
         await b.close()
 asyncio.run(main())

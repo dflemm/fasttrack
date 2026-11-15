@@ -39,8 +39,13 @@ label.pick { display: flex; align-items: center; justify-content: space-between;
 
 /* One screen, no scrolling: the board takes whatever height is left. */
 main { flex: 1; min-height: 0; display: grid; gap: 8px; padding: 8px 12px 10px; overflow: hidden; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; }
-#boardwrap { min-width: 0; min-height: 0; display: flex; align-items: center; justify-content: center; }
-#stage { flex: none; width: 300px; height: 300px; position: relative; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+#boardwrap { min-width: 0; min-height: 0; position: relative; overflow: hidden; margin: 0 -12px; }
+#camBtns { position: absolute; top: 4px; right: 10px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+#camBtns .btn { min-height: 34px; padding: 4px 10px; font-size: .82rem; display: flex; align-items: center; gap: 6px; background: color-mix(in srgb, var(--panel) 88%, transparent); }
+#camBtns .btn[hidden] { display: none; }
+@media (max-width: 520px) { #camBtns { right: 6px; top: 2px; } #camBtns .btn { width: 38px; min-height: 38px; padding: 0; justify-content: center; } #camBtns .btn span { display: none; } }
+#camBtns svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+#stage { position: absolute; inset: 0; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
 #stage.drag { cursor: grabbing; }
 #scaler { position: absolute; left: 0; top: 0; width: 1000px; height: 1000px; transform-origin: 0 0; }
 #scaler svg { position: absolute; left: 0; top: 0; width: 1000px; height: 1000px; overflow: visible; }
@@ -59,6 +64,7 @@ main { flex: 1; min-height: 0; display: grid; gap: 8px; padding: 8px 12px 10px; 
   main { grid-template-columns: minmax(0, 1fr) clamp(250px, 34vw, 380px); grid-template-rows: auto minmax(0, 1fr); }
   #turnbar { grid-column: 1 / -1; }
   #side { min-height: 0; }
+  #boardwrap { margin: 0; }
 }
 
 .steps { display: flex; align-items: center; gap: 6px 8px; min-width: 0; }
@@ -226,6 +232,10 @@ dialog td:first-child { font-weight: 700; white-space: nowrap; }
       <g id="gOver"></g>
     </svg>
     </div></div>
+    <div id="camBtns">
+      <button class="btn" id="penBtn" type="button" aria-label="Zoom to my pen" title="Zoom to my pen"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6"></circle><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg><span>My pen</span></button>
+      <button class="btn" id="fitBtn" type="button" aria-label="Show the whole board" title="Show the whole board" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"></path></svg><span>Whole board</span></button>
+    </div>
   </div>
   <div id="side">
     <section id="players" aria-label="Players"></section>
@@ -286,7 +296,7 @@ dialog td:first-child { font-weight: 700; white-space: nowrap; }
     <label class="pick" for="viewSel">Board view
       <select id="viewSel"><option value="top">Top</option><option value="angled">Angled</option><option value="low">Low</option><option value="custom" hidden>Custom</option></select>
     </label>
-    <p class="hint">You can also drag the board to turn and tilt it.</p>
+    <p class="hint">Drag the board to turn and tilt it. Pinch with two fingers (or use the mouse wheel) to zoom, and move two fingers to slide the board.</p>
     <label class="pick" for="speedSel">Bot speed
       <select id="speedSel"><option value="slow">Slow</option><option value="normal">Normal</option><option value="fast">Fast</option></select>
     </label>
@@ -420,12 +430,14 @@ function xy(pos, seat) {
 }
 // ---------- 3D view ----------
 const PERSP = 2300, PEG_H = 46;
-const VIEWS = { top: { tilt: 0 }, angled: { tilt: 48 }, low: { tilt: 63 } };
+const VIEWS = { top: { tilt: 0 }, angled: { get tilt() { return angledTilt(); } }, low: { tilt: 63 } };
 let homeSpin = 0; // turns the board so your own arm is at the bottom
-const view = { tilt: 48, spin: 0 };
+const view = { tilt: 48, spin: 0, zoom: 1, px: 0, py: 0 };
+const cam = { W: 600, H: 600, k: 0.6, tx: 0, ty: 0, bx0: 0, bx1: 1000 }; // how the 1000-unit board space maps onto the screen area
+/** "Angled" leans the board as far as the free space allows: flatter on a tall phone so the board fills it. */
+function angledTilt() { const c = Math.max(Math.cos(rad(48)), Math.min(Math.cos(rad(30)), (cam.H / Math.max(1, cam.W)) * 0.93)); return Math.round(Math.acos(c) * 180 / Math.PI); }
 const rad = (d) => d * Math.PI / 180;
-const zoomOf = () => 1 - 0.05 * Math.sin(rad(view.tilt));
-const yOff = () => -55 * Math.sin(rad(view.tilt));
+const zoomOf = () => 1, yOff = () => 0;
 function proj(x, y, h = 0) {
   const s = rad(view.spin), t = rad(view.tilt), zm = zoomOf(), dx = x - C, dy = y - C;
   const x1 = (dx * Math.cos(s) - dy * Math.sin(s)) * zm, y1 = dx * Math.sin(s) + dy * Math.cos(s);
@@ -433,8 +445,27 @@ function proj(x, y, h = 0) {
   const sc = PERSP / (PERSP - z2);
   return { x: C + x1 * sc, y: C + yOff() + y2 * sc, sc: sc * zm, z: z2 };
 }
+/** Scale and position so the whole board, at the current tilt and turn, fills the free area. */
+function computeFit() {
+  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+  const add = (q, dy) => { x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y + dy); y1 = Math.max(y1, q.y + dy); };
+  for (let i = 0; i < 48; i++) {
+    const a = i / 48 * 2 * Math.PI, c = Math.cos(a), sn = Math.sin(a);
+    add(proj(C + 503 * c, C + 503 * sn, 0), -26); add(proj(C + 503 * c, C + 503 * sn, 0), 26);  // rim and name tags
+    add(proj(C + 492 * c, C + 492 * sn, -30), 18);                                              // board edge and its shadow
+    add(proj(C + 420 * c, C + 420 * sn, PEG_H + 18), 0);                                        // heads of pegs in the pens
+  }
+  const k = Math.max(0.05, Math.min(cam.W / (x1 - x0), cam.H / (y1 - y0)));
+  return { k, tx: (cam.W - (x1 - x0) * k) / 2 - x0 * k, ty: (cam.H - (y1 - y0) * k) / 2 - y0 * k, bx0: x0, bx1: x1 };
+}
 function applyView() {
   const zm = zoomOf();
+  if (view.zoom < 1.02) { view.zoom = 1; view.px = 0; view.py = 0; }
+  view.px = Math.max(-cam.W * view.zoom / 2, Math.min(cam.W * view.zoom / 2, view.px));
+  view.py = Math.max(-cam.H * view.zoom / 2, Math.min(cam.H * view.zoom / 2, view.py));
+  Object.assign(cam, computeFit());
+  $('scaler').style.transform = `translate(${(cam.tx + view.px).toFixed(1)}px, ${(cam.ty + view.py).toFixed(1)}px) scale(${(cam.k * view.zoom).toFixed(4)})`;
+  $('fitBtn').hidden = view.zoom === 1;
   $('glow').style.transform = $('board').style.transform = `translateY(${yOff().toFixed(1)}px) perspective(${PERSP}px) scale3d(${zm},${zm},${zm}) rotateX(${view.tilt.toFixed(2)}deg) rotateZ(${view.spin.toFixed(2)}deg)`;
   const u = $('under'); u.textContent = '';
   const ring = (r, h, dy) => pts(Array.from({ length: 72 }, (_, i) => { const a = i / 72 * 2 * Math.PI, q = proj(C + r * Math.cos(a), C + r * Math.sin(a), h); return { x: q.x, y: q.y + dy }; }));
@@ -444,13 +475,25 @@ function applyView() {
 }
 function saveView() { try { localStorage.setItem('ft-view', JSON.stringify(view)); } catch (e) {} }
 function setViewSel() { const off = (((view.spin - homeSpin) % 360) + 540) % 360 - 180; const k = Object.keys(VIEWS).find((n) => Math.abs(VIEWS[n].tilt - view.tilt) < 0.5 && Math.abs(off) < 0.5); $('viewSel').value = k || 'custom'; }
+let flight = 0;
 function flyTo(target) {
-  const from = { ...view }, t0 = performance.now(), ms = reduced ? 0 : 380;
-  let dSpin = ((target.spin - from.spin) % 360 + 540) % 360 - 180;
-  const done = () => { view.tilt = target.tilt; view.spin = target.spin; applyView(); saveView(); setViewSel(); };
+  const from = { ...view }, to = { ...view, ...target }, t0 = performance.now(), ms = reduced ? 0 : 420, id = ++flight;
+  const dSpin = ((to.spin - from.spin) % 360 + 540) % 360 - 180;
+  const set = (e) => { for (const k of ['tilt', 'zoom', 'px', 'py']) view[k] = from[k] + (to[k] - from[k]) * e; view.spin = from.spin + dSpin * e; applyView(); };
+  const done = () => { Object.assign(view, to); applyView(); saveView(); setViewSel(); };
   if (!ms) return done();
-  const f = (now) => { const t = Math.min(1, (now - t0) / ms), e = t * (2 - t); view.tilt = from.tilt + (target.tilt - from.tilt) * e; view.spin = from.spin + dSpin * e; applyView(); t < 1 ? requestAnimationFrame(f) : done(); };
+  const f = (now) => { if (id !== flight) return; const t = Math.min(1, (now - t0) / ms); if (t < 1) { set(t * (2 - t)); requestAnimationFrame(f); } else done(); };
   requestAnimationFrame(f);
+  setTimeout(() => { if (id === flight) { flight++; done(); } }, ms + 150);
+}
+/** Zoom in on your own pen, exit hole and home row, with your arm at the bottom. */
+function focusPen() {
+  const seat = S.players[ME].seat, zoom = 1.9, f = polar(armAngle(seat) + Math.PI / 12, 6.9 * D, 0);
+  const keep = { ...view };
+  Object.assign(view, { spin: homeSpin, zoom, px: 0, py: 0 });
+  const fit = computeFit(), q = proj(f.x, f.y, 0);
+  Object.assign(view, keep);
+  flyTo({ spin: homeSpin, zoom, px: cam.W / 2 - (fit.tx + q.x * fit.k * zoom), py: cam.H / 2 - (fit.ty + q.y * fit.k * zoom) });
 }
 
 const pts = (arr) => arr.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
@@ -470,11 +513,11 @@ function drawGlow() {
 function drawLabels() {
   const layer = $('gLabels'); layer.textContent = '';
   if (!S) return;
-  const k = ($('stage').clientWidth || 600) / 1000, fs = Math.max(22, 12 / k);
+  const fs = Math.max(22 / view.zoom, 12 / (cam.k * view.zoom));
   S.players.forEach((pl, p) => {
     const c = polar(armAngle(pl.seat) + Math.PI / 6, 10.9 * D, 0), q = proj(c.x, c.y, 0);
     const w = pl.name.length * fs * 0.6 + fs * 2.1, h = fs * 1.6;
-    const x = Math.max(w / 2 - 12, Math.min(1012 - w / 2, q.x));
+    const x = Math.max(cam.bx0 + w / 2 + 4, Math.min(cam.bx1 - w / 2 - 4, q.x));
     const g = svg('g', { class: 'plabel' + (S.turn === p && S.winner === null ? ' active' : ''), transform: `translate(${x.toFixed(1)},${q.y.toFixed(1)})` }, layer);
     svg('rect', { x: -w / 2, y: -h / 2, width: w, height: h, rx: h / 2, style: `stroke:var(--s${pl.seat})` }, g);
     svg('circle', { cx: -w / 2 + fs * 0.8, cy: 0, r: fs * 0.38, fill: `var(--s${pl.seat})`, stroke: 'rgba(0,0,0,.4)', 'stroke-width': 1.5 }, g);
@@ -901,6 +944,7 @@ function beginGame(state, me) {
   sel = null; busy = false; showing = false; lastCard = {}; logLines = []; turnPlays = null; turns = []; handOrder = []; dragging = null; gameId++;
   const spin = -S.players[ME].seat * 60;
   if (spin !== homeSpin) { view.spin += spin - homeSpin; homeSpin = spin; }
+  view.zoom = 1; view.px = 0; view.py = 0;
   applyView(); setViewSel();
   buildPegs();
   const cut = S.cuts.map((c) => `${S.players[c.p].name} ${cardShort(c.card)}`).join(', ');
@@ -1096,32 +1140,58 @@ function guestLost(why) {
 THEMES.forEach((t) => { for (const id of ['themeSel', 'baseSel']) { const o = document.createElement('option'); o.value = t.id; o.textContent = t.name; $(id).appendChild(o); } });
 { const o = document.createElement('option'); o.value = 'custom'; o.textContent = 'Custom colors'; $('themeSel').appendChild(o); }
 drawBoard();
-try { const v = JSON.parse(localStorage.getItem('ft-view')); if (v && isFinite(v.tilt) && isFinite(v.spin)) { view.tilt = Math.max(0, Math.min(68, v.tilt)); view.spin = v.spin; } } catch (e) {}
+let hadSavedView = false;
+try { const v = JSON.parse(localStorage.getItem('ft-view')); if (v && isFinite(v.tilt) && isFinite(v.spin)) { view.tilt = Math.max(0, Math.min(68, v.tilt)); view.spin = v.spin; hadSavedView = true; } } catch (e) {}
+let firstFit = true;
 const fitStage = () => {
-  const bw = $('boardwrap'), side = Math.max(120, Math.floor(Math.min(bw.clientWidth, bw.clientHeight)));
-  $('stage').style.width = $('stage').style.height = side + 'px';
-  $('scaler').style.transform = `scale(${side / 1000})`;
-  drawLabels();
+  const bw = $('boardwrap');
+  cam.W = Math.max(120, bw.clientWidth); cam.H = Math.max(120, bw.clientHeight);
+  if (firstFit) { firstFit = false; if (!hadSavedView) view.tilt = angledTilt(); setViewSel(); }
+  applyView();
   if (S) renderTurnBar();
 };
 new ResizeObserver(fitStage).observe($('boardwrap'));
 $('viewSel').onchange = (e) => { if (VIEWS[e.target.value]) flyTo({ tilt: VIEWS[e.target.value].tilt, spin: homeSpin }); };
-(() => { // drag to turn and tilt the board
-  const st = $('stage'); let start = null, dragging = false, swallow = false;
-  st.addEventListener('pointerdown', (e) => { if (e.button) return; start = { x: e.clientX, y: e.clientY, tilt: view.tilt, spin: view.spin, id: e.pointerId }; dragging = false; });
+(() => { // one finger turns and tilts the board; two fingers zoom and slide it
+  const st = $('stage'), pts = new Map(); let start = null, moved = false, pinch = null, swallow = false;
+  const local = (e) => { const r = st.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  const zoomAbout = (c0, c1, z0, p0, z) => { // keep the board point under c0 under c1 while the zoom changes
+    const ux = (c0.x - cam.tx - p0.x) / (cam.k * z0), uy = (c0.y - cam.ty - p0.y) / (cam.k * z0);
+    view.zoom = z; view.px = c1.x - cam.tx - ux * cam.k * z; view.py = c1.y - cam.ty - uy * cam.k * z; applyView();
+  };
+  const pinchState = () => { const [a, b] = [...pts.values()]; return { d: Math.max(20, Math.hypot(a.x - b.x, a.y - b.y)), c: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } }; };
+  st.addEventListener('pointerdown', (e) => {
+    if (e.button) return;
+    flight++;
+    pts.set(e.pointerId, local(e));
+    if (pts.size === 1) { start = { x: e.clientX, y: e.clientY, tilt: view.tilt, spin: view.spin, id: e.pointerId }; moved = false; }
+    else if (pts.size === 2) { start = null; moved = true; pinch = { ...pinchState(), zoom: view.zoom, p: { x: view.px, y: view.py } }; for (const id of pts.keys()) { try { st.setPointerCapture(id); } catch (err) {} } }
+  });
   st.addEventListener('pointermove', (e) => {
+    if (!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, local(e));
+    if (pinch && pts.size >= 2) { const now = pinchState(); zoomAbout(pinch.c, now.c, pinch.zoom, pinch.p, Math.max(1, Math.min(4, pinch.zoom * now.d / pinch.d))); return; }
     if (!start || e.pointerId !== start.id) return;
     const dx = e.clientX - start.x, dy = e.clientY - start.y;
-    if (!dragging) { if (Math.hypot(dx, dy) < 8) return; dragging = true; st.classList.add('drag'); try { st.setPointerCapture(e.pointerId); } catch (err) {} }
-    const k = 1000 / st.clientWidth;
+    if (!moved) { if (Math.hypot(dx, dy) < 8) return; moved = true; st.classList.add('drag'); try { st.setPointerCapture(e.pointerId); } catch (err) {} }
+    const k = 1 / (cam.k * view.zoom);
     view.spin = start.spin - dx * k * 0.22;
     view.tilt = Math.max(0, Math.min(68, start.tilt - dy * k * 0.16));
     applyView();
   });
-  const end = () => { if (dragging) { swallow = true; setTimeout(() => (swallow = false), 0); st.classList.remove('drag'); saveView(); setViewSel(); } start = null; dragging = false; };
+  const end = (e) => {
+    pts.delete(e.pointerId);
+    if (pts.size < 2) pinch = null;
+    if (pts.size) return;
+    if (moved) { swallow = true; setTimeout(() => (swallow = false), 0); st.classList.remove('drag'); saveView(); setViewSel(); }
+    start = null; moved = false;
+  };
   st.addEventListener('pointerup', end); st.addEventListener('pointercancel', end);
   st.addEventListener('click', (e) => { if (swallow) { e.stopPropagation(); e.preventDefault(); } }, true);
+  st.addEventListener('wheel', (e) => { e.preventDefault(); flight++; const c = local(e); zoomAbout(c, c, view.zoom, { x: view.px, y: view.py }, Math.max(1, Math.min(4, view.zoom * Math.exp(-e.deltaY * 0.0016)))); }, { passive: false });
 })();
+$('penBtn').onclick = () => focusPen();
+$('fitBtn').onclick = () => flyTo({ spin: homeSpin, zoom: 1, px: 0, py: 0 });
 (() => { // rules chart
   const rows = [
     { c: [['A', 'S']], mv: '1', again: 1, pen: 1, bull: 0, note: '' },
