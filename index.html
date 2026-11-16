@@ -90,9 +90,12 @@ main { flex: 1; min-height: 0; display: grid; gap: 8px; padding: 8px 12px 10px; 
 .mini.red { color: var(--cardred); }
 .mini.empty { background: transparent; border: 1px dashed var(--line); }
 
-#prompt { background: var(--panel); border-radius: 10px; padding: 7px 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-height: 54px; font-size: .95rem; }
+#prompt { padding: 0 4px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-height: 24px; font-size: .95rem; line-height: 1.25; }
+#prompt .yourturn { font-weight: 700; display: flex; align-items: center; gap: 7px; }
+#prompt .yourturn::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--turn); box-shadow: inset 0 0 0 2px rgba(0,0,0,.25); }
+#prompt .btn { min-height: 34px; padding: 4px 12px; }
 #prompt p { margin: 0; flex: 1 1 170px; }
-#hand { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; padding-top: 6px; }
+#hand { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; padding-top: 4px; }
 .card { background: var(--card); color: var(--cardink); border: 2px solid transparent; border-radius: 9px; padding: 5px 3px 4px; min-height: clamp(58px, 11.5vh, 98px); display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 1px; transition: transform .12s; }
 .card.red { color: var(--cardred); }
 .card .rank { font: 700 1.45rem/1 var(--display); }
@@ -102,7 +105,7 @@ main { flex: 1; min-height: 0; display: grid; gap: 8px; padding: 8px 12px 10px; 
 .card { touch-action: none; cursor: grab; }
 .card.off { opacity: .7; }
 .card.dragging { z-index: 5; position: relative; transition: none; box-shadow: 0 8px 18px rgba(0,0,0,.45); cursor: grabbing; opacity: 1; }
-@media (max-height: 640px) { .card .does { display: none; } .card { min-height: 52px; } #turnbar { height: 44px; } #prompt { min-height: 44px; } header { padding: 3px 12px; } }
+@media (max-height: 640px) { .card .does { display: none; } .card { min-height: 52px; } #turnbar { height: 44px; } #prompt { min-height: 20px; } header { padding: 3px 12px; } }
 
 #histList { display: flex; flex-direction: column; gap: 6px; max-height: min(62vh, 560px); overflow-y: auto; padding-right: 4px; }
 .hrow { background: var(--page); border-left: 8px solid var(--pc); border-radius: 9px; padding: 7px 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
@@ -871,10 +874,9 @@ function button(label, fn, primary) { const b = document.createElement('button')
 function renderPrompt() {
   const box = $('prompt'); box.textContent = '';
   const p = document.createElement('p'); box.appendChild(p);
-  if (S.winner !== null) { p.textContent = `${S.players[S.winner].name} won. Start a new game to play again.`; box.appendChild(button('New game', () => $('newDlg').showModal(), true)); return; }
-  if (S.turn !== ME) { p.textContent = logLines[0] || `${S.players[S.turn].name} is playing.`; return; }
-  if (busy) { p.textContent = logLines[0] || ''; return; }
-  if (!sel) { p.textContent = (logLines[0] && logLines[0].startsWith(S.players[ME].name) ? 'Play again. ' : 'Your turn. ') + 'Pick a card.'; return; }
+  if (S.winner !== null) { p.textContent = S.winner === ME ? 'You won.' : `${S.players[S.winner].name} won.`; box.appendChild(button('New game', () => openNew(), true)); return; }
+  if (S.turn !== ME || busy) return; // nothing to say while others play; the top bar shows their moves
+  if (!sel) { p.className = 'yourturn'; p.textContent = turnPlays && turnPlays.p === ME && !turnPlays.over ? 'Your turn again' : 'Your turn'; return; }
   const card = S.players[ME].hand.find((c) => c.id === sel.cardId), ms = sel.moves, n = E.cardValue(card.rank);
   if (sel.ambiguous) {
     p.textContent = 'That hole has a peg in it. Which do you want?';
@@ -1009,22 +1011,30 @@ function newGame(n) {
 // ---------- playing with friends ----------
 // The host's page runs the game and is the referee. Guests connect straight to it (peer to peer);
 // a public signalling service is only used to introduce the two browsers by room code.
-const net = { mode: 'local', peer: null, code: '', name: '', seats: 4, guests: [], hostConn: null, started: false, dropped: new Set(), needSync: [], queue: [], lobby: null, chain: Promise.resolve() };
+const net = { mode: 'local', peer: null, code: '', name: '', seats: 4, guests: [], hostConn: null, started: false, dropped: new Set(), needSync: [], queue: [], lobby: null, chain: Promise.resolve(), wake: null, failed: false };
 const clientId = (() => { try { let v = localStorage.getItem('ft-client'); if (!v) { v = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('ft-client', v); } return v; } catch (e) { return Math.random().toString(36).slice(2) + Date.now().toString(36); } })();
 const peerId = (code) => 'fasttrack-room-' + code.toLowerCase();
-const peerOpts = () => window.FT_PEER || {};
+// Relay (TURN) servers carry the game when two networks will not connect directly (common on mobile data and office Wi-Fi).
+// The built-in free relay is best-effort. If friends cannot connect, add your own relay here.
+const EXTRA_ICE_SERVERS = []; // e.g. [{ urls: 'turn:YOUR-HOST:3478', username: 'USER', credential: 'PASSWORD' }]
+const peerOpts = () => window.FT_PEER || { config: { sdpSemantics: 'unified-plan', iceServers: [
+  { urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] },
+  { urls: ['turn:eu-0.turn.peerjs.com:3478', 'turn:us-0.turn.peerjs.com:3478'], username: 'peerjs', credential: 'peerjsp' },
+  ...EXTRA_ICE_SERVERS] } };
+const BLOCKED = 'The room was found, but a direct connection could not be made. One of the two networks is blocking it. Try switching between Wi-Fi and mobile data, or turn off any VPN or iCloud Private Relay, then join again.';
 const makeCode = () => { const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({ length: 5 }, () => a[Math.floor(Math.random() * a.length)]).join(''); };
 const inviteLink = () => location.href.split('#')[0] + '#join-' + net.code;
 function sendTo(g, msg) { try { if (g.conn && g.conn.open) g.conn.send(msg); } catch (e) {} }
 function lobbyStatus(text) { $('lobbyStatus').textContent = text || ''; }
 function leaveNet() {
   const peer = net.peer;
-  Object.assign(net, { mode: 'local', peer: null, code: '', guests: [], hostConn: null, started: false, dropped: new Set(), needSync: [], queue: [], lobby: null, chain: Promise.resolve() });
+  Object.assign(net, { mode: 'local', peer: null, code: '', guests: [], hostConn: null, started: false, dropped: new Set(), needSync: [], queue: [], lobby: null, chain: Promise.resolve(), wake: null, failed: false });
   if (peer) { try { peer.destroy(); } catch (e) {} }
 }
 function netError(err) {
   const type = err && err.type;
   if (type === 'unavailable-id' && net.mode === 'host' && !net.started) return hostRoom(net.name, net.seats); // code already in use: pick another
+  if (type === 'peer-unavailable') net.failed = true;
   const msg = type === 'peer-unavailable' ? 'No open room has that code. Check the code, and that the host still has the room open.'
     : type === 'browser-incompatible' ? 'This browser cannot make the direct connection that online play needs.'
     : 'Could not reach the online service. Online play works from the published web page (for example on GitHub Pages), not inside the Claude preview.';
@@ -1064,9 +1074,17 @@ function hostRoom(name, seats) {
   peer.on('connection', (conn) => { conn.on('data', (m) => hostOnData(conn, m)); conn.on('close', () => hostOnClose(conn)); });
   let opened = false, retries = 0;
   peer.on('open', () => { opened = true; retries = 0; });
-  // If the signalling link drops, games in progress carry on (they are direct); retry a few times so late joiners can still find the room.
-  peer.on('disconnected', () => { if (net.peer !== peer || peer.destroyed || !opened || retries >= 5) return; retries++; setTimeout(() => { try { if (net.peer === peer && !peer.destroyed) peer.reconnect(); } catch (e) {} }, 2000 * retries); });
-  peer.on('error', (e) => { if (net.peer === peer) netError(e); });
+  // The room code never changes once the room is open. If the link to the online service drops (for example when you
+  // switch apps on a phone to send the invite), keep reconnecting under the same code so the invite stays valid.
+  const again = () => { if (net.peer !== peer || peer.destroyed || !opened || !peer.disconnected) return; try { peer.reconnect(); } catch (e) {} };
+  const later = () => { retries++; if (!net.started && $('lobbyDlg').open) lobbyStatus('Reconnecting to the online service…'); setTimeout(again, Math.min(10000, 1200 * retries)); };
+  peer.on('disconnected', () => { if (net.peer === peer && !peer.destroyed && opened) later(); });
+  peer.on('error', (e) => {
+    if (net.peer !== peer) return;
+    if (opened && ['unavailable-id', 'network', 'server-error', 'socket-error', 'socket-closed'].includes(e && e.type)) return later();
+    netError(e);
+  });
+  net.wake = again;
 }
 function hostOnData(conn, m) {
   if (!m || typeof m !== 'object') return;
@@ -1148,14 +1166,28 @@ function joinRoom(name, code) {
   const peer = net.peer = new window.Peer(undefined, peerOpts());
   peer.on('open', () => {
     if (net.peer !== peer) return;
-    const conn = net.hostConn = peer.connect(peerId(net.code), { reliable: true, serialization: 'json' });
-    const timer = setTimeout(() => { if (net.peer === peer && !conn.open) lobbyStatus('Still trying to reach the room. Check the code, and that the host has the room open.'); }, 9000);
-    conn.on('open', () => { clearTimeout(timer); lastPong = Date.now(); lobbyStatus('Connected. Waiting for the host to start.'); conn.send({ t: 'hello', id: clientId, name: net.name }); });
-    conn.on('data', (m) => { if (net.peer === peer) guestOnData(m); });
-    conn.on('close', () => { if (net.peer === peer) guestLost('The connection to the host was lost.'); });
+    let tries = 0;
+    const attempt = () => {
+      if (net.peer !== peer || net.failed) return;
+      tries++;
+      const conn = net.hostConn = peer.connect(peerId(net.code), { reliable: true, serialization: 'json' });
+      let wasOpen = false;
+      const timer = setTimeout(() => {
+        if (net.peer !== peer || net.hostConn !== conn || conn.open || net.failed) return;
+        if (tries < 3) { lobbyStatus('Still reaching the room. Trying again…'); try { conn.close(); } catch (e) {} attempt(); }
+        else lobbyStatus(BLOCKED);
+      }, 10000);
+      conn.on('open', () => { wasOpen = true; clearTimeout(timer); lastPong = Date.now(); lobbyStatus('Connected. Waiting for the host to start.'); conn.send({ t: 'hello', id: clientId, name: net.name }); });
+      conn.on('iceStateChanged', (st) => { if (st === 'failed' && net.peer === peer && net.hostConn === conn && !wasOpen && tries >= 3) lobbyStatus(BLOCKED); });
+      conn.on('data', (m) => { if (net.peer === peer && net.hostConn === conn) guestOnData(m); });
+      conn.on('close', () => { if (net.peer === peer && net.hostConn === conn && wasOpen) guestLost('The connection to the host was lost.'); });
+    };
+    attempt();
   });
   peer.on('error', (e) => { if (net.peer === peer) netError(e); });
+  net.wake = () => { if (net.peer === peer && net.started && net.hostConn && !net.hostConn.open) guestLost('The connection to the host was lost.'); };
 }
+document.addEventListener('visibilitychange', () => { if (!document.hidden && net.wake) net.wake(); }); // back from another app
 function guestOnData(m) {
   if (!m || typeof m !== 'object') return;
   if (m.t === 'pong') { lastPong = Date.now(); return; }
