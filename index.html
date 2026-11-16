@@ -67,10 +67,19 @@ main { flex: 1; min-height: 0; display: grid; gap: 8px; padding: 8px 12px 10px; 
 .edge { fill: color-mix(in srgb, var(--rim) 55%, #000); }
 #side { display: flex; flex-direction: column; gap: 8px; min-width: 0; grid-row: 3; }
 #turnbar { grid-row: 1; }
+/* Home screen record: four tiles across the top, where the move bar sits during a game. */
+#statBar { grid-row: 1; display: none; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+body.home #statBar { display: grid; }
+.stat { background: var(--panel); border-radius: 10px; padding: 7px 4px 6px; display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 0; border-top: 4px solid var(--sc, var(--line)); }
+.stat .num { font: 700 1.45rem/1 var(--display); font-variant-numeric: tabular-nums; }
+.stat .lab { font-size: .66rem; line-height: 1.15; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); text-align: center; }
+.stat .rate { width: 78%; height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; margin-top: 3px; }
+.stat .rate i { display: block; height: 100%; background: var(--sc); border-radius: 3px; }
+.stat.wide { grid-column: 1 / -1; flex-direction: row; justify-content: center; gap: 10px; padding: 12px; font-size: .92rem; color: var(--muted); }
 #boardwrap { grid-row: 2; }
 @media (min-aspect-ratio: 1/1) and (min-width: 640px) {
   main { grid-template-columns: minmax(0, 1fr) clamp(250px, 34vw, 380px); grid-template-rows: auto minmax(0, 1fr); }
-  #turnbar { grid-column: 1 / -1; }
+  #turnbar, #statBar { grid-column: 1 / -1; }
   #side { min-height: 0; grid-row: 2; grid-column: 2; }
   #boardwrap { margin: 0; grid-column: 1; }
 }
@@ -273,6 +282,7 @@ dialog td:first-child { font-weight: 700; white-space: nowrap; }
 </header>
 <main>
   <div id="turnbar" aria-live="polite"></div>
+  <section id="statBar" aria-label="Your record on this device"></section>
   <div id="boardwrap">
     <div id="stage"><div id="scaler">
     <svg id="under" viewBox="0 0 1000 1000" aria-hidden="true"></svg>
@@ -324,7 +334,7 @@ dialog td:first-child { font-weight: 700; white-space: nowrap; }
         <button class="btn" id="homeAccount" type="button" hidden>Account and friends</button>
         <button class="btn" id="homeRules" type="button">How to play</button>
       </div>
-      <p id="homeStats"></p>
+      <p id="homeStats" class="hint" style="margin:0"></p>
     </section>
     <section id="players" aria-label="Players"></section>
     <div id="prompt" aria-live="polite"></div>
@@ -803,7 +813,22 @@ const sfx = {
 let stats = { played: 0, won: 0, bumps: 0, bumped: 0 }, statsGame = -1;
 try { const v = JSON.parse(localStorage.getItem('ft-stats')); if (v && typeof v.played === 'number') stats = { played: v.played | 0, won: v.won | 0, bumps: v.bumps | 0, bumped: v.bumped | 0 }; } catch (e) {}
 const saveStats = () => { try { localStorage.setItem('ft-stats', JSON.stringify(stats)); } catch (e) {} };
-function renderStats() { $('homeStats').textContent = stats.played ? `On this device: ${stats.played} ${stats.played === 1 ? 'game' : 'games'}, ${stats.won} won. You bumped ${stats.bumps} pegs and were bumped ${stats.bumped} times.` : ''; }
+/** The record shown on the home screen. Today it is kept on this device; with accounts it can come from the player's profile instead. */
+function currentStats() { return { ...stats, scope: 'device' }; }
+function renderStats() {
+  const st = currentStats(), bar = $('statBar'); bar.textContent = '';
+  $('homeStats').textContent = st.played ? 'Your record on this device.' : '';
+  if (!st.played) { const d = document.createElement('div'); d.className = 'stat wide'; d.textContent = 'Play a game and your record shows up here.'; bar.appendChild(d); return; }
+  const rate = Math.round((st.won / st.played) * 100);
+  const tiles = [['Games', st.played, 0], ['Wins', st.won, 1, rate], ['Pegs you bumped', st.bumps, 5], ['Times bumped', st.bumped, 3]];
+  for (const [lab, num, seat, pct] of tiles) {
+    const d = document.createElement('div'); d.className = 'stat'; d.style.setProperty('--sc', `var(--s${seat})`);
+    const n = document.createElement('span'), l = document.createElement('span'); n.className = 'num'; n.textContent = num > 9999 ? '9999+' : String(num); l.className = 'lab'; l.textContent = pct === undefined ? lab : `${lab} \u00B7 ${pct}%`;
+    d.append(n, l);
+    if (pct !== undefined) { const r = document.createElement('span'), f = document.createElement('i'); r.className = 'rate'; r.setAttribute('aria-hidden', 'true'); f.style.width = pct + '%'; r.appendChild(f); d.appendChild(r); }
+    bar.appendChild(d);
+  }
+}
 const label = (p) => (symbolsOn ? SYMBOLS[S.players[p].seat] + ' ' : '') + S.players[p].name;
 const seatOf = (p) => S.players[p].seat;
 const pegEls = {};
