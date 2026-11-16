@@ -88,6 +88,10 @@ npm run ios                  # opens Xcode
 npm run android              # opens Android Studio
 ```
 
+The app icon and launch screen artwork (the board seen from above) are in `app/assets/`. Capacitor's assets
+tool turns them into every size both stores need: in `app/`, run `npx @capacitor/assets generate` after adding
+the platforms. If its options have changed, check that tool's README.
+
 In Xcode: choose your team, then add the **Sign in with Apple** and **Push Notifications** capabilities.
 Run on your phone, then Archive and upload to TestFlight.
 
