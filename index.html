@@ -20,6 +20,7 @@
   --card: #fffdf6; --cardink: #1d1a16; --cardred: #b8261f;
   --turn: var(--accent);
   --s0: #c8322b; --s1: #2e8b4a; --s2: #6d3fa0; --s3: #e8742a; --s4: #f0c020; --s5: #1f6fc4;
+  --c0: var(--s0); --c1: var(--s1); --c2: var(--s2); --c3: var(--s3); --c4: var(--s4); --c5: var(--s5); /* color of each arm of the board */
   --display: "Zilla Slab", Rockwell, Georgia, serif;
   --body: "Atkinson Hyperlegible", "Segoe UI", Helvetica, Arial, sans-serif;
   color-scheme: dark;
@@ -40,7 +41,7 @@ header h1 { font: 700 1.25rem/1 var(--display); margin: 0; letter-spacing: .01em
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #1b1608; font-weight: 700; }
 .iconbtn { width: 40px; padding: 0; display: grid; place-items: center; }
 .iconbtn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-label.pick { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: .95rem; }
+label.pick, div.pick { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: .95rem; }
 @media (max-width: 520px) { .tag { display: none; } }
 
 /* One screen, no scrolling: the board takes whatever height is left. */
@@ -96,8 +97,8 @@ body.home #statBar { display: grid; }
 #turnbar .mini { width: 23px; height: 30px; font-size: .68rem; border-radius: 3px; }
 #turnbar .steps { flex: 1 1 100%; }
 
-#players { display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); gap: 6px; }
-@media (min-aspect-ratio: 1/1) and (min-width: 640px) { #players { grid-template-columns: repeat(min(var(--n, 4), 3), minmax(0, 1fr)); } }
+#players { display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); gap: 6px; }
+@media (min-aspect-ratio: 1/1) and (min-width: 640px) { #players { grid-template-columns: repeat(min(var(--cols, 4), 3), minmax(0, 1fr)); } }
 .chip { container-type: inline-size; display: flex; align-items: center; gap: 7px; background: var(--panel); border: 2px solid transparent; border-radius: 10px; padding: 5px 7px; min-width: 0; }
 .chip.turn { border-color: var(--turn); animation: namepulse 1.7s ease-in-out infinite; }
 @keyframes namepulse { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--turn) 65%, transparent); } }
@@ -169,7 +170,17 @@ body.home header h1 { visibility: hidden; }
 body.home, body.home header, body.home .btn { transition: background-color 1.2s, border-color 1.2s, color 1.2s; }
 body.home #board *, body.home #glow *, body.home #under *, body.home .peg * { transition: fill 1.2s, stroke 1.2s; }
 .pegsym { fill: #fff; stroke: rgba(0,0,0,.75); stroke-width: 3px; paint-order: stroke; font-family: var(--body); font-weight: 700; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
-.chip .team { font-weight: 400; color: var(--muted); }
+.chip.teamchip { flex-direction: column; align-items: stretch; gap: 2px; padding: 6px 9px; }
+.mline { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.mline .dot { width: 13px; height: 13px; }
+.mline .nm { flex: 1; min-width: 0; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+.mline.now .nm { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.mline .dot.on { outline: 2px solid var(--ink); outline-offset: 1px; }
+.swatch { width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(0,0,0,.45); padding: 0; flex: none; box-shadow: 0 0 0 2px var(--panel), 0 0 0 3px var(--line); }
+span.swatch { box-shadow: none; }
+#lobbyList .tm { font-size: .78rem; color: var(--muted); white-space: nowrap; }
+#lobbyList .btn { min-height: 34px; padding: 2px 9px; }
+#lobbyList li { flex-wrap: wrap; }
 input[type=text], input[type=email] { font: inherit; font-size: 16px; /* 16px stops iPhones zooming in when a field is tapped */ color: inherit; background: var(--page); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; min-height: 38px; min-width: 0; width: 11em; }
 .modes { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; margin: 0; display: flex; flex-direction: column; gap: 8px; }
 .modes legend { font-size: .85rem; color: var(--muted); padding: 0 4px; }
@@ -207,9 +218,9 @@ dialog { background: var(--panel); color: var(--ink); border: 1px solid var(--li
 .scroll { overflow-x: auto; }
 .cheat { border-collapse: collapse; width: 100%; font-size: .92rem; table-layout: auto; }
 .cheat th { font: 700 .64rem/1.15 var(--body); text-transform: uppercase; letter-spacing: .03em; padding: 6px 3px; text-align: center; background: var(--page); border-top: 5px solid var(--line); }
-.cheat th:nth-child(1) { border-top-color: var(--s0); } .cheat th:nth-child(2) { border-top-color: var(--s3); }
-.cheat th:nth-child(3) { border-top-color: var(--s4); } .cheat th:nth-child(4) { border-top-color: var(--s1); }
-.cheat th:nth-child(5) { border-top-color: var(--s2); } .cheat th:nth-child(6) { border-top-color: var(--s5); }
+.cheat th:nth-child(1) { border-top-color: #c8322b; } .cheat th:nth-child(2) { border-top-color: #e8742a; }
+.cheat th:nth-child(3) { border-top-color: #f0c020; } .cheat th:nth-child(4) { border-top-color: #2e8b4a; }
+.cheat th:nth-child(5) { border-top-color: #6d3fa0; } .cheat th:nth-child(6) { border-top-color: #1f6fc4; }
 .cheat th:first-child, .cheat td:first-child { text-align: left; padding-left: 2px; }
 .cheat td { border-top: 1px solid var(--line); padding: 6px 3px; text-align: center; vertical-align: middle; font-weight: 400; white-space: normal; }
 .cheat td:first-child { white-space: nowrap; }
@@ -231,7 +242,7 @@ dialog { background: var(--panel); color: var(--ink); border: 1px solid var(--li
 .pc small { font-size: .8rem; line-height: 1; font-family: var(--body); }
 .facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 8px; margin-top: 6px; }
 .fact { background: var(--page); border-radius: 9px; padding: 7px 10px 7px 7px; font-size: .86rem; line-height: 1.25; display: grid; grid-template-columns: 112px 1fr; gap: 10px; align-items: center; }
-.fact svg { width: 112px; height: 56px; background: var(--board2); border-radius: 6px; }
+.fact svg { width: 112px; height: 56px; background: #dcb679; border-radius: 6px; }
 .fact b { display: block; font-size: .95rem; margin-bottom: 2px; }
 dialog::backdrop { background: rgba(0,0,0,.55); }
 dialog h2 { font: 700 1.4rem/1.15 var(--display); margin: 0 0 10px; text-wrap: balance; }
@@ -358,8 +369,9 @@ dialog td:first-child { font-weight: 700; white-space: nowrap; }
     </label>
     <label class="pick" id="namesRow" for="namesInp" hidden>Player names <input type="text" id="namesInp" placeholder="Ann, Ben, Cy" autocomplete="off" style="width:13em"></label>
     <label class="pick" id="teamRow" for="teamSel">Teams
-      <select id="teamSel"><option value="">Everyone for themselves</option><option value="pairs">Teams of two</option><option value="triples">Two teams of three</option></select>
+      <select id="teamSel"><option value="">Everyone for themselves</option><option value="pairs">Teams of two</option><option value="triples">Two teams of three</option><option value="double">Two colors each</option></select>
     </label>
+    <div class="pick" id="colorRow" hidden><span id="colorLab">Your color</span><span class="inline" id="mySwatches"></span></div>
     <label class="pick" id="timerRow" for="timerSel" hidden>Turn timer
       <select id="timerSel"><option value="0">Off</option><option value="30">30 seconds</option><option value="60">60 seconds</option><option value="90">90 seconds</option></select>
     </label>
@@ -545,7 +557,7 @@ a=extmap-allow-mixed`)!==-1){let s=i.sdp.split(`
     isBrowserSupported:${this.isBrowserSupported()}
     isUnifiedPlanSupported:${this.isUnifiedPlanSupported()}`}constructor(){this.isIOS=typeof navigator!="undefined"?["iPad","iPhone","iPod"].includes(navigator.platform):!1,this.supportedBrowsers=["firefox","chrome","safari"],this.minFirefoxVersion=59,this.minChromeVersion=72,this.minSafariVersion=605}},Ft=t=>!t||/^[A-Za-z0-9]+(?:[ _-][A-Za-z0-9]+)*$/.test(t),Tt=()=>Math.random().toString(36).slice(2),bt={iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:["turn:eu-0.turn.peerjs.com:3478","turn:us-0.turn.peerjs.com:3478"],username:"peerjs",credential:"peerjsp"}],sdpSemantics:"unified-plan"},Qe=class extends ie{noop(){}blobToArrayBuffer(e,r){let n=new FileReader;return n.onload=function(i){i.target&&r(i.target.result)},n.readAsArrayBuffer(e),n}binaryStringToArrayBuffer(e){let r=new Uint8Array(e.length);for(let n=0;n<e.length;n++)r[n]=e.charCodeAt(n)&255;return r.buffer}isSecure(){return location.protocol==="https:"}constructor(...e){super(...e),this.CLOUD_HOST="0.peerjs.com",this.CLOUD_PORT=443,this.chunkedBrowsers={Chrome:1,chrome:1},this.defaultConfig=bt,this.browser=N.getBrowser(),this.browserVersion=N.getVersion(),this.pack=_e,this.unpack=ge,this.supports=(function(){let r={browser:N.isBrowserSupported(),webRTC:N.isWebRTCSupported(),audioVideo:!1,data:!1,binaryBlob:!1,reliable:!1};if(!r.webRTC)return r;let n;try{n=new RTCPeerConnection(bt),r.audioVideo=!0;let i;try{i=n.createDataChannel("_PEERJSTEST",{ordered:!0}),r.data=!0,r.reliable=!!i.ordered;try{i.binaryType="blob",r.binaryBlob=!N.isIOS}catch{}}catch{}finally{i&&i.close()}}catch{}finally{n&&n.close()}return r})(),this.validateId=Ft,this.randomToken=Tt}},b=new Qe,zt="PeerJS: ";var qe=class{get logLevel(){return this._logLevel}set logLevel(e){this._logLevel=e}log(...e){this._logLevel>=3&&this._print(3,...e)}warn(...e){this._logLevel>=2&&this._print(2,...e)}error(...e){this._logLevel>=1&&this._print(1,...e)}setLogFunction(e){this._print=e}_print(e,...r){let n=[zt,...r];for(let i in n)n[i]instanceof Error&&(n[i]="("+n[i].name+") "+n[i].message);e>=3?console.log(...n):e>=2?console.warn("WARNING",...n):e>=1&&console.error("ERROR",...n)}constructor(){this._logLevel=0}},d=new qe,ct={},Nt=Object.prototype.hasOwnProperty,v="~";function J(){}Object.create&&(J.prototype=Object.create(null),new J().__proto__||(v=!1));function $t(t,e,r){this.fn=t,this.context=e,this.once=r||!1}function kt(t,e,r,n,i){if(typeof r!="function")throw new TypeError("The listener must be a function");var s=new $t(r,n||t,i),o=v?v+e:e;return t._events[o]?t._events[o].fn?t._events[o]=[t._events[o],s]:t._events[o].push(s):(t._events[o]=s,t._eventsCount++),t}function ne(t,e){--t._eventsCount===0?t._events=new J:delete t._events[e]}function y(){this._events=new J,this._eventsCount=0}y.prototype.eventNames=function(){var e=[],r,n;if(this._eventsCount===0)return e;for(n in r=this._events)Nt.call(r,n)&&e.push(v?n.slice(1):n);return Object.getOwnPropertySymbols?e.concat(Object.getOwnPropertySymbols(r)):e};y.prototype.listeners=function(e){var r=v?v+e:e,n=this._events[r];if(!n)return[];if(n.fn)return[n.fn];for(var i=0,s=n.length,o=new Array(s);i<s;i++)o[i]=n[i].fn;return o};y.prototype.listenerCount=function(e){var r=v?v+e:e,n=this._events[r];return n?n.fn?1:n.length:0};y.prototype.emit=function(e,r,n,i,s,o){var a=v?v+e:e;if(!this._events[a])return!1;var c=this._events[a],p=arguments.length,f,u;if(c.fn){switch(c.once&&this.removeListener(e,c.fn,void 0,!0),p){case 1:return c.fn.call(c.context),!0;case 2:return c.fn.call(c.context,r),!0;case 3:return c.fn.call(c.context,r,n),!0;case 4:return c.fn.call(c.context,r,n,i),!0;case 5:return c.fn.call(c.context,r,n,i,s),!0;case 6:return c.fn.call(c.context,r,n,i,s,o),!0}for(u=1,f=new Array(p-1);u<p;u++)f[u-1]=arguments[u];c.fn.apply(c.context,f)}else{var l=c.length,m;for(u=0;u<l;u++)switch(c[u].once&&this.removeListener(e,c[u].fn,void 0,!0),p){case 1:c[u].fn.call(c[u].context);break;case 2:c[u].fn.call(c[u].context,r);break;case 3:c[u].fn.call(c[u].context,r,n);break;case 4:c[u].fn.call(c[u].context,r,n,i);break;default:if(!f)for(m=1,f=new Array(p-1);m<p;m++)f[m-1]=arguments[m];c[u].fn.apply(c[u].context,f)}}return!0};y.prototype.on=function(e,r,n){return kt(this,e,r,n,!1)};y.prototype.once=function(e,r,n){return kt(this,e,r,n,!0)};y.prototype.removeListener=function(e,r,n,i){var s=v?v+e:e;if(!this._events[s])return this;if(!r)return ne(this,s),this;var o=this._events[s];if(o.fn)o.fn===r&&(!i||o.once)&&(!n||o.context===n)&&ne(this,s);else{for(var a=0,c=[],p=o.length;a<p;a++)(o[a].fn!==r||i&&!o[a].once||n&&o[a].context!==n)&&c.push(o[a]);c.length?this._events[s]=c.length===1?c[0]:c:ne(this,s)}return this};y.prototype.removeAllListeners=function(e){var r;return e?(r=v?v+e:e,this._events[r]&&ne(this,r)):(this._events=new J,this._eventsCount=0),this};y.prototype.off=y.prototype.removeListener;y.prototype.addListener=y.prototype.on;y.prefixed=v;y.EventEmitter=y;ct=y;var D={};E(D,"ConnectionType",()=>x);E(D,"PeerErrorType",()=>g);E(D,"BaseConnectionErrorType",()=>Ze);E(D,"DataConnectionErrorType",()=>pt);E(D,"SerializationType",()=>he);E(D,"SocketEventType",()=>k);E(D,"ServerMessageType",()=>C);var x=(function(t){return t.Data="data",t.Media="media",t})({}),g=(function(t){return t.BrowserIncompatible="browser-incompatible",t.Disconnected="disconnected",t.InvalidID="invalid-id",t.InvalidKey="invalid-key",t.Network="network",t.PeerUnavailable="peer-unavailable",t.SslUnavailable="ssl-unavailable",t.ServerError="server-error",t.SocketError="socket-error",t.SocketClosed="socket-closed",t.UnavailableID="unavailable-id",t.WebRTC="webrtc",t})({}),Ze=(function(t){return t.NegotiationFailed="negotiation-failed",t.ConnectionClosed="connection-closed",t})({}),pt=(function(t){return t.NotOpenYet="not-open-yet",t.MessageToBig="message-too-big",t})({}),he=(function(t){return t.Binary="binary",t.BinaryUTF8="binary-utf8",t.JSON="json",t.None="raw",t})({}),k=(function(t){return t.Message="message",t.Disconnected="disconnected",t.Error="error",t.Close="close",t})({}),C=(function(t){return t.Heartbeat="HEARTBEAT",t.Candidate="CANDIDATE",t.Offer="OFFER",t.Answer="ANSWER",t.Open="OPEN",t.Error="ERROR",t.IdTaken="ID-TAKEN",t.InvalidKey="INVALID-KEY",t.Leave="LEAVE",t.Expire="EXPIRE",t})({}),xt="1.5.5",we=class extends ct.EventEmitter{constructor(e,r,n,i,s,o=5e3){super(),this.pingInterval=o,this._disconnected=!0,this._messagesQueue=[];let a=e?"wss://":"ws://";this._baseUrl=a+r+":"+n+i+"peerjs?key="+s}start(e,r){this._id=e;let n=`${this._baseUrl}&id=${e}&token=${r}`;this._socket||!this._disconnected||(this._socket=new WebSocket(n+"&version="+xt),this._disconnected=!1,this._socket.onmessage=i=>{let s;try{s=JSON.parse(i.data),d.log("Server message received:",s)}catch{d.log("Invalid server message",i.data);return}this.emit(k.Message,s)},this._socket.onclose=i=>{this._disconnected||(d.log("Socket closed.",i),this._cleanup(),this._disconnected=!0,this.emit(k.Disconnected))},this._socket.onopen=()=>{this._disconnected||(this._sendQueuedMessages(),d.log("Socket open"),this._scheduleHeartbeat())})}_scheduleHeartbeat(){this._wsPingTimer=setTimeout(()=>{this._sendHeartbeat()},this.pingInterval)}_sendHeartbeat(){if(!this._wsOpen()){d.log("Cannot send heartbeat, because socket closed");return}let e=JSON.stringify({type:C.Heartbeat});this._socket.send(e),this._scheduleHeartbeat()}_wsOpen(){return!!this._socket&&this._socket.readyState===1}_sendQueuedMessages(){let e=[...this._messagesQueue];this._messagesQueue=[];for(let r of e)this.send(r)}send(e){if(this._disconnected)return;if(!this._id){this._messagesQueue.push(e);return}if(!e.type){this.emit(k.Error,"Invalid message");return}if(!this._wsOpen())return;let r=JSON.stringify(e);this._socket.send(r)}close(){this._disconnected||(this._cleanup(),this._disconnected=!0)}_cleanup(){this._socket&&(this._socket.onopen=this._socket.onmessage=this._socket.onclose=null,this._socket.close(),this._socket=void 0),clearTimeout(this._wsPingTimer)}},se=class{constructor(e){this.connection=e}startConnection(e){let r=this._startPeerConnection();if(this.connection.peerConnection=r,this.connection.type===x.Media&&e._stream&&this._addTracksToConnection(e._stream,r),e.originator){let n=this.connection,i={ordered:!!e.reliable},s=r.createDataChannel(n.label,i);n._initializeDataChannel(s),this._makeOffer()}else this.handleSDP("OFFER",e.sdp)}_startPeerConnection(){d.log("Creating RTCPeerConnection.");let e=new RTCPeerConnection(this.connection.provider.options.config);return this._setupListeners(e),e}_setupListeners(e){let r=this.connection.peer,n=this.connection.connectionId,i=this.connection.type,s=this.connection.provider;d.log("Listening for ICE candidates."),e.onicecandidate=o=>{!o.candidate||!o.candidate.candidate||(d.log(`Received ICE candidates for ${r}:`,o.candidate),s.socket.send({type:C.Candidate,payload:{candidate:o.candidate,type:i,connectionId:n},dst:r}))},e.oniceconnectionstatechange=()=>{switch(e.iceConnectionState){case"failed":d.log("iceConnectionState is failed, closing connections to "+r),this.connection.emitError(Ze.NegotiationFailed,"Negotiation of connection to "+r+" failed."),this.connection.close();break;case"closed":d.log("iceConnectionState is closed, closing connections to "+r),this.connection.emitError(Ze.ConnectionClosed,"Connection to "+r+" closed."),this.connection.close();break;case"disconnected":d.log("iceConnectionState changed to disconnected on the connection with "+r);break;case"completed":e.onicecandidate=()=>{};break}this.connection.emit("iceStateChanged",e.iceConnectionState)},d.log("Listening for data channel"),e.ondatachannel=o=>{d.log("Received data channel");let a=o.channel;s.getConnection(r,n)._initializeDataChannel(a)},d.log("Listening for remote stream"),e.ontrack=o=>{d.log("Received remote stream");let a=o.streams[0],c=s.getConnection(r,n);if(c.type===x.Media){let p=c;this._addStreamToMediaConnection(a,p)}}}cleanup(){d.log("Cleaning up PeerConnection to "+this.connection.peer);let e=this.connection.peerConnection;if(!e)return;this.connection.peerConnection=null,e.onicecandidate=e.oniceconnectionstatechange=e.ondatachannel=e.ontrack=()=>{};let r=e.signalingState!=="closed",n=!1,i=this.connection.dataChannel;i&&(n=!!i.readyState&&i.readyState!=="closed"),(r||n)&&e.close()}async _makeOffer(){let e=this.connection.peerConnection,r=this.connection.provider;try{let n=await e.createOffer(this.connection.options.constraints);d.log("Created offer."),this.connection.options.sdpTransform&&typeof this.connection.options.sdpTransform=="function"&&(n.sdp=this.connection.options.sdpTransform(n.sdp)||n.sdp);try{await e.setLocalDescription(n),d.log("Set localDescription:",n,`for:${this.connection.peer}`);let i={sdp:n,type:this.connection.type,connectionId:this.connection.connectionId,metadata:this.connection.metadata};if(this.connection.type===x.Data){let s=this.connection;i={...i,label:s.label,reliable:s.reliable,serialization:s.serialization}}r.socket.send({type:C.Offer,payload:i,dst:this.connection.peer})}catch(i){i!="OperationError: Failed to set local offer sdp: Called in wrong state: kHaveRemoteOffer"&&(r.emitError(g.WebRTC,i),d.log("Failed to setLocalDescription, ",i))}}catch(n){r.emitError(g.WebRTC,n),d.log("Failed to createOffer, ",n)}}async _makeAnswer(){let e=this.connection.peerConnection,r=this.connection.provider;try{let n=await e.createAnswer();d.log("Created answer."),this.connection.options.sdpTransform&&typeof this.connection.options.sdpTransform=="function"&&(n.sdp=this.connection.options.sdpTransform(n.sdp)||n.sdp);try{await e.setLocalDescription(n),d.log("Set localDescription:",n,`for:${this.connection.peer}`),r.socket.send({type:C.Answer,payload:{sdp:n,type:this.connection.type,connectionId:this.connection.connectionId},dst:this.connection.peer})}catch(i){r.emitError(g.WebRTC,i),d.log("Failed to setLocalDescription, ",i)}}catch(n){r.emitError(g.WebRTC,n),d.log("Failed to create answer, ",n)}}async handleSDP(e,r){r=new RTCSessionDescription(r);let n=this.connection.peerConnection,i=this.connection.provider;d.log("Setting remote description",r);let s=this;try{await n.setRemoteDescription(r),d.log(`Set remoteDescription:${e} for:${this.connection.peer}`),e==="OFFER"&&await s._makeAnswer()}catch(o){i.emitError(g.WebRTC,o),d.log("Failed to setRemoteDescription, ",o)}}async handleCandidate(e){d.log("handleCandidate:",e);try{await this.connection.peerConnection.addIceCandidate(e),d.log(`Added ICE candidate for:${this.connection.peer}`)}catch(r){this.connection.provider.emitError(g.WebRTC,r),d.log("Failed to handleCandidate, ",r)}}_addTracksToConnection(e,r){if(d.log(`add tracks from stream ${e.id} to peer connection`),!r.addTrack)return d.error("Your browser does't support RTCPeerConnection#addTrack. Ignored.");e.getTracks().forEach(n=>{r.addTrack(n,e)})}_addStreamToMediaConnection(e,r){d.log(`add stream ${e.id} to media connection ${r.connectionId}`),r.addStream(e)}},oe=class extends ct.EventEmitter{emitError(e,r){d.error("Error:",r),this.emit("error",new et(`${e}`,r))}},et=class extends Error{constructor(e,r){typeof r=="string"?super(r):(super(),Object.assign(this,r)),this.type=e}},ae=class extends oe{get open(){return this._open}constructor(e,r,n){super(),this.peer=e,this.provider=r,this.options=n,this._open=!1,this.metadata=n.metadata}},it,G=class G extends ae{get type(){return x.Media}get localStream(){return this._localStream}get remoteStream(){return this._remoteStream}constructor(e,r,n){super(e,r,n),this._localStream=this.options._stream,this.connectionId=this.options.connectionId||G.ID_PREFIX+b.randomToken(),this._negotiator=new se(this),this._localStream&&this._negotiator.startConnection({_stream:this._localStream,originator:!0})}_initializeDataChannel(e){this.dataChannel=e,this.dataChannel.onopen=()=>{d.log(`DC#${this.connectionId} dc connection success`),this.emit("willCloseOnRemote")},this.dataChannel.onclose=()=>{d.log(`DC#${this.connectionId} dc closed for:`,this.peer),this.close()}}addStream(e){d.log("Receiving stream",e),this._remoteStream=e,super.emit("stream",e)}handleMessage(e){let r=e.type,n=e.payload;switch(e.type){case C.Answer:this._negotiator.handleSDP(r,n.sdp),this._open=!0;break;case C.Candidate:this._negotiator.handleCandidate(n.candidate);break;default:d.warn(`Unrecognized message type:${r} from peer:${this.peer}`);break}}answer(e,r={}){if(this._localStream){d.warn("Local stream already exists on this MediaConnection. Are you answering a call twice?");return}this._localStream=e,r&&r.sdpTransform&&(this.options.sdpTransform=r.sdpTransform),this._negotiator.startConnection({...this.options._payload,_stream:e});let n=this.provider._getMessages(this.connectionId);for(let i of n)this.handleMessage(i);this._open=!0}close(){this._negotiator&&(this._negotiator.cleanup(),this._negotiator=null),this._localStream=null,this._remoteStream=null,this.provider&&(this.provider._removeConnection(this),this.provider=null),this.options&&this.options._stream&&(this.options._stream=null),this.open&&(this._open=!1,super.emit("close"))}};it=new WeakMap,A(G,it,G.ID_PREFIX="mc_");var ce=G,tt=class{constructor(e){this._options=e}_buildRequest(e){let r=this._options.secure?"https":"http",{host:n,port:i,path:s,key:o}=this._options,a=new URL(`${r}://${n}:${i}${s}${o}/${e}`);return a.searchParams.set("ts",`${Date.now()}${Math.random()}`),a.searchParams.set("version",xt),fetch(a.href,{referrerPolicy:this._options.referrerPolicy})}async retrieveId(){try{let e=await this._buildRequest("id");if(e.status!==200)throw new Error(`Error. Status:${e.status}`);return e.text()}catch(e){d.error("Error retrieving ID",e);let r="";throw this._options.path==="/"&&this._options.host!==b.CLOUD_HOST&&(r=" If you passed in a `path` to your self-hosted PeerServer, you'll also need to pass in that same path when creating a new Peer."),new Error("Could not get an ID from the server."+r)}}async listAllPeers(){try{let e=await this._buildRequest("peers");if(e.status!==200){if(e.status===401){let r="";throw this._options.host===b.CLOUD_HOST?r="It looks like you're using the cloud server. You can email team@peerjs.com to enable peer listing for your API key.":r="You need to enable `allow_discovery` on your self-hosted PeerServer to use this feature.",new Error("It doesn't look like you have permission to list peers IDs. "+r)}throw new Error(`Error. Status:${e.status}`)}return e.json()}catch(e){throw d.error("Error retrieving list peers",e),new Error("Could not get list peers from the server."+e)}}},st,ot,P=class P extends ae{get type(){return x.Data}constructor(e,r,n){super(e,r,n),this.connectionId=this.options.connectionId||P.ID_PREFIX+Tt(),this.label=this.options.label||this.connectionId,this.reliable=!!this.options.reliable,this._negotiator=new se(this),this._negotiator.startConnection(this.options._payload||{originator:!0,reliable:this.reliable})}_initializeDataChannel(e){this.dataChannel=e,this.dataChannel.onopen=()=>{d.log(`DC#${this.connectionId} dc connection success`),this._open=!0,this.emit("open")},this.dataChannel.onmessage=r=>{d.log(`DC#${this.connectionId} dc onmessage:`,r.data)},this.dataChannel.onclose=()=>{d.log(`DC#${this.connectionId} dc closed for:`,this.peer),this.close()}}close(e){if(e!=null&&e.flush){this.send({__peerData:{type:"close"}});return}this._negotiator&&(this._negotiator.cleanup(),this._negotiator=null),this.provider&&(this.provider._removeConnection(this),this.provider=null),this.dataChannel&&(this.dataChannel.onopen=null,this.dataChannel.onmessage=null,this.dataChannel.onclose=null,this.dataChannel=null),this.open&&(this._open=!1,super.emit("close"))}send(e,r=!1){if(!this.open){this.emitError(pt.NotOpenYet,"Connection is not open. You should listen for the `open` event before sending messages.");return}return this._send(e,r)}async handleMessage(e){let r=e.payload;switch(e.type){case C.Answer:await this._negotiator.handleSDP(e.type,r.sdp);break;case C.Candidate:await this._negotiator.handleCandidate(r.candidate);break;default:d.warn("Unrecognized message type:",e.type,"from peer:",this.peer);break}}};st=new WeakMap,ot=new WeakMap,A(P,st,P.ID_PREFIX="dc_"),A(P,ot,P.MAX_BUFFERED_AMOUNT=8388608);var pe=P,Y=class extends pe{get bufferSize(){return this._bufferSize}_initializeDataChannel(e){super._initializeDataChannel(e),this.dataChannel.binaryType="arraybuffer",this.dataChannel.addEventListener("message",r=>this._handleDataMessage(r))}_bufferedSend(e){(this._buffering||!this._trySend(e))&&(this._buffer.push(e),this._bufferSize=this._buffer.length)}_trySend(e){if(!this.open)return!1;if(this.dataChannel.bufferedAmount>pe.MAX_BUFFERED_AMOUNT)return this._buffering=!0,setTimeout(()=>{this._buffering=!1,this._tryBuffer()},50),!1;try{this.dataChannel.send(e)}catch(r){return d.error(`DC#:${this.connectionId} Error when sending:`,r),this._buffering=!0,this.close(),!1}return!0}_tryBuffer(){if(!this.open||this._buffer.length===0)return;let e=this._buffer[0];this._trySend(e)&&(this._buffer.shift(),this._bufferSize=this._buffer.length,this._tryBuffer())}close(e){if(e!=null&&e.flush){this.send({__peerData:{type:"close"}});return}this._buffer=[],this._bufferSize=0,super.close()}constructor(...e){super(...e),this._buffer=[],this._bufferSize=0,this._buffering=!1}},$=class extends Y{close(e){super.close(e),this._chunkedData={}}constructor(e,r,n){super(e,r,n),this.chunker=new ie,this.serialization=he.Binary,this._chunkedData={}}_handleDataMessage({data:e}){let r=ge(e),n=r.__peerData;if(n){if(n.type==="close"){this.close();return}this._handleChunk(r);return}this.emit("data",r)}_handleChunk(e){let r=e.__peerData,n=this._chunkedData[r]||{data:[],count:0,total:e.total};if(n.data[e.n]=new Uint8Array(e.data),n.count++,this._chunkedData[r]=n,n.total===n.count){delete this._chunkedData[r];let i=Ut(n.data);this._handleDataMessage({data:i})}}_send(e,r){let n=_e(e);if(n instanceof Promise)return this._send_blob(n);if(!r&&n.byteLength>this.chunker.chunkedMTU){this._sendChunks(n);return}this._bufferedSend(n)}async _send_blob(e){let r=await e;if(r.byteLength>this.chunker.chunkedMTU){this._sendChunks(r);return}this._bufferedSend(r)}_sendChunks(e){let r=this.chunker.chunk(e);d.log(`DC#${this.connectionId} Try to send ${r.length} chunks...`);for(let n of r)this.send(n,!0)}},rt=class extends Y{_handleDataMessage({data:e}){super.emit("data",e)}_send(e,r){this._bufferedSend(e)}constructor(...e){super(...e),this.serialization=he.None}},nt=class extends Y{_handleDataMessage({data:e}){let r=this.parse(this.decoder.decode(e)),n=r.__peerData;if(n&&n.type==="close"){this.close();return}this.emit("data",r)}_send(e,r){let n=this.encoder.encode(this.stringify(e));if(n.byteLength>=b.chunkedMTU){this.emitError(pt.MessageToBig,"Message too big for JSON channel");return}this._bufferedSend(n)}constructor(...e){super(...e),this.serialization=he.JSON,this.encoder=new TextEncoder,this.decoder=new TextDecoder,this.stringify=JSON.stringify,this.parse=JSON.parse}};var at,V=class V extends oe{get id(){return this._id}get options(){return this._options}get open(){return this._open}get socket(){return this._socket}get connections(){let e=Object.create(null);for(let[r,n]of this._connections)e[r]=n;return e}get destroyed(){return this._destroyed}get disconnected(){return this._disconnected}constructor(e,r){super(),this._serializers={raw:rt,json:nt,binary:$,"binary-utf8":$,default:$},this._id=null,this._lastServerId=null,this._destroyed=!1,this._disconnected=!1,this._open=!1,this._connections=new Map,this._lostMessages=new Map;let n;if(e&&e.constructor==Object?r=e:e&&(n=e.toString()),r={debug:0,host:b.CLOUD_HOST,port:b.CLOUD_PORT,path:"/",key:V.DEFAULT_KEY,token:b.randomToken(),config:b.defaultConfig,referrerPolicy:"strict-origin-when-cross-origin",serializers:{},...r},this._options=r,this._serializers={...this._serializers,...this.options.serializers},this._options.host==="/"&&(this._options.host=window.location.hostname),this._options.path&&(this._options.path[0]!=="/"&&(this._options.path="/"+this._options.path),this._options.path[this._options.path.length-1]!=="/"&&(this._options.path+="/")),this._options.secure===void 0&&this._options.host!==b.CLOUD_HOST?this._options.secure=b.isSecure():this._options.host==b.CLOUD_HOST&&(this._options.secure=!0),this._options.logFunction&&d.setLogFunction(this._options.logFunction),d.logLevel=this._options.debug||0,this._api=new tt(r),this._socket=this._createServerConnection(),!b.supports.audioVideo&&!b.supports.data){this._delayedAbort(g.BrowserIncompatible,"The current browser does not support WebRTC");return}if(n&&!b.validateId(n)){this._delayedAbort(g.InvalidID,`ID "${n}" is invalid`);return}n?this._initialize(n):this._api.retrieveId().then(i=>this._initialize(i)).catch(i=>this._abort(g.ServerError,i))}_createServerConnection(){let e=new we(this._options.secure,this._options.host,this._options.port,this._options.path,this._options.key,this._options.pingInterval);return e.on(k.Message,r=>{this._handleMessage(r)}),e.on(k.Error,r=>{this._abort(g.SocketError,r)}),e.on(k.Disconnected,()=>{this.disconnected||(this.emitError(g.Network,"Lost connection to server."),this.disconnect())}),e.on(k.Close,()=>{this.disconnected||this._abort(g.SocketClosed,"Underlying socket is already closed.")}),e}_initialize(e){this._id=e,this.socket.start(e,this._options.token)}_handleMessage(e){let r=e.type,n=e.payload,i=e.src;switch(r){case C.Open:this._lastServerId=this.id,this._open=!0,this.emit("open",this.id);break;case C.Error:this._abort(g.ServerError,n.msg);break;case C.IdTaken:this._abort(g.UnavailableID,`ID "${this.id}" is taken`);break;case C.InvalidKey:this._abort(g.InvalidKey,`API KEY "${this._options.key}" is invalid`);break;case C.Leave:d.log(`Received leave message from ${i}`),this._cleanupPeer(i),this._connections.delete(i);break;case C.Expire:this.emitError(g.PeerUnavailable,`Could not connect to peer ${i}`);break;case C.Offer:{let s=n.connectionId,o=this.getConnection(i,s);if(o&&(o.close(),d.warn(`Offer received for existing Connection ID:${s}`)),n.type===x.Media){let c=new ce(i,this,{connectionId:s,_payload:n,metadata:n.metadata});o=c,this._addConnection(i,o),this.emit("call",c)}else if(n.type===x.Data){let c=new this._serializers[n.serialization](i,this,{connectionId:s,_payload:n,metadata:n.metadata,label:n.label,serialization:n.serialization,reliable:n.reliable});o=c,this._addConnection(i,o),this.emit("connection",c)}else{d.warn(`Received malformed connection type:${n.type}`);return}let a=this._getMessages(s);for(let c of a)o.handleMessage(c);break}default:{if(!n){d.warn(`You received a malformed message from ${i} of type ${r}`);return}let s=n.connectionId,o=this.getConnection(i,s);o&&o.peerConnection?o.handleMessage(e):s?this._storeMessage(s,e):d.warn("You received an unrecognized message:",e);break}}}_storeMessage(e,r){this._lostMessages.has(e)||this._lostMessages.set(e,[]),this._lostMessages.get(e).push(r)}_getMessages(e){let r=this._lostMessages.get(e);return r?(this._lostMessages.delete(e),r):[]}connect(e,r={}){if(r={serialization:"default",...r},this.disconnected){d.warn("You cannot connect to a new Peer because you called .disconnect() on this Peer and ended your connection with the server. You can create a new Peer to reconnect, or call reconnect on this peer if you believe its ID to still be available."),this.emitError(g.Disconnected,"Cannot connect to new Peer after disconnecting from server.");return}let n=new this._serializers[r.serialization](e,this,r);return this._addConnection(e,n),n}call(e,r,n={}){if(this.disconnected){d.warn("You cannot connect to a new Peer because you called .disconnect() on this Peer and ended your connection with the server. You can create a new Peer to reconnect."),this.emitError(g.Disconnected,"Cannot connect to new Peer after disconnecting from server.");return}if(!r){d.error("To call a peer, you must provide a stream from your browser's `getUserMedia`.");return}let i=new ce(e,this,{...n,_stream:r});return this._addConnection(e,i),i}_addConnection(e,r){d.log(`add connection ${r.type}:${r.connectionId} to peerId:${e}`),this._connections.has(e)||this._connections.set(e,[]),this._connections.get(e).push(r)}_removeConnection(e){let r=this._connections.get(e.peer);if(r){let n=r.indexOf(e);n!==-1&&r.splice(n,1)}this._lostMessages.delete(e.connectionId)}getConnection(e,r){let n=this._connections.get(e);if(!n)return null;for(let i of n)if(i.connectionId===r)return i;return null}_delayedAbort(e,r){setTimeout(()=>{this._abort(e,r)},0)}_abort(e,r){d.error("Aborting!"),this.emitError(e,r),this._lastServerId?this.disconnect():this.destroy()}destroy(){this.destroyed||(d.log(`Destroy peer with ID:${this.id}`),this.disconnect(),this._cleanup(),this._destroyed=!0,this.emit("close"))}_cleanup(){for(let e of this._connections.keys())this._cleanupPeer(e),this._connections.delete(e);this.socket.removeAllListeners()}_cleanupPeer(e){let r=this._connections.get(e);if(r)for(let n of r)n.close()}disconnect(){if(this.disconnected)return;let e=this.id;d.log(`Disconnect peer with ID:${e}`),this._disconnected=!0,this._open=!1,this.socket.close(),this._lastServerId=e,this._id=null,this.emit("disconnected",e)}reconnect(){if(this.disconnected&&!this.destroyed)d.log(`Attempting reconnection to server with ID ${this._lastServerId}`),this._disconnected=!1,this._initialize(this._lastServerId);else{if(this.destroyed)throw new Error("This peer cannot reconnect to the server. It has already been destroyed.");if(!this.disconnected&&!this.open)d.error("In a hurry? We're still trying to make the initial connection!");else throw new Error(`Peer ${this.id} cannot reconnect because it is not disconnected from the server!`)}}listAllPeers(e=r=>{}){this._api.listAllPeers().then(r=>e(r)).catch(r=>this._abort(g.ServerError,r))}};at=new WeakMap,A(V,at,V.DEFAULT_KEY="peerjs");var fe=V;window.Peer=fe;})();
 </script>
-<script>var FT=(()=>{var G=Object.defineProperty;var ne=Object.getOwnPropertyDescriptor;var te=Object.getOwnPropertyNames;var oe=Object.prototype.hasOwnProperty;var re=(e,n)=>{for(var r in n)G(e,r,{get:n[r],enumerable:!0})},se=(e,n,r,t)=>{if(n&&typeof n=="object"||typeof n=="function")for(let o of te(n))!oe.call(e,o)&&o!==r&&G(e,o,{get:()=>n[o],enumerable:!(t=ne(n,o))||t.enumerable});return e};var ae=e=>se(G({},"__esModule",{value:!0}),e);var ke={};re(ke,{DEFAULT_RULES:()=>Z,HAND_SIZE:()=>pe,HOME_ENTRANCE_OFFSET:()=>fe,HOME_LEN:()=>ce,PEN_EXIT_OFFSET:()=>de,PLAY_AGAIN:()=>B,SEATS:()=>ue,SEATS_FOR:()=>j,SECTION:()=>ie,TRACK:()=>le,applyMove:()=>W,cardValue:()=>Q,chooseBotMove:()=>xe,createGame:()=>me,evaluate:()=>ee,ftIndex:()=>w,genBackward:()=>V,genForward:()=>A,homeEntrance:()=>$,isFT:()=>S,legalMoves:()=>K,mates:()=>T,newDeck:()=>X,occupant:()=>C,penExit:()=>L,priorityFastPeg:()=>be,priorityFastRef:()=>F,viewFor:()=>ge});var ue=6,ie=14,le=84,ce=4,pe=5,fe=7,de=9,Z={jackSwapNeedsOwnPeg:!0,cornerIsFastTrack:!0,jokerBackOne:!1},B=new Set(["A","JK","K","Q","J","6"]),j={2:[0,3],3:[0,2,4],4:[0,1,3,4],5:[0,1,2,3,4],6:[0,1,2,3,4,5]},w=e=>(e%6+6)%6*14,$=e=>e*14+7,L=e=>e*14+9,S=e=>e%14===0,O=e=>(e%84+84)%84;function Q(e){switch(e){case"A":case"JK":case"J":case"Q":case"K":return 1;default:return parseInt(e,10)}}function U(e){let n=e.rng=e.rng+1831565813|0;return n=Math.imul(n^n>>>15,n|1),n^=n+Math.imul(n^n>>>7,n|61),((n^n>>>14)>>>0)/4294967296}function q(e,n){for(let r=n.length-1;r>0;r--){let t=Math.floor(U(e)*(r+1));[n[r],n[t]]=[n[t],n[r]]}return n}function X(){let e=["A","2","3","4","5","6","7","8","9","10","J","Q","K"],n=["S","H","D","C"],r=[],t=0;for(let o of n)for(let s of e)r.push({id:t++,rank:s,suit:o});return r.push({id:t++,rank:"JK",suit:null},{id:t++,rank:"JK",suit:null}),r}var H=["2","3","4","5","6","7","8","9","10","J","Q","K","A","JK"];function me(e){var s;let n=e.players.length,r=j[n];if(!r)throw new Error("Fast Track needs 2 to 6 players");let t={rules:{...Z,...e.rules||{}},teams:e.teams==="pairs"&&(n===4||n===6)?Array.from({length:n},(a,l)=>l%(n/2)):e.teams==="triples"&&n===6?Array.from({length:n},(a,l)=>l%2):null,players:[],turn:0,winner:null,winners:[],rng:((s=e.seed)!=null?s:Math.floor(Math.random()*2**31))|0,cuts:[],moveCount:0};e.players.forEach((a,l)=>{let u=q(t,X());t.players.push({seat:r[l],name:a.name,bot:!!a.bot,deck:u,hand:[],discard:[],pegs:[0,1,2,3].map(p=>({zone:"pen",idx:p,fast:!1}))})});let o=t.players.map((a,l)=>l);for(;o.length>1;){let a=o.map(u=>{let p=t.players[u].deck;return{p:u,card:p[Math.floor(U(t)*p.length)]}});t.cuts=a;let l=Math.max(...a.map(u=>H.indexOf(u.card.rank)));o=a.filter(u=>H.indexOf(u.card.rank)===l).map(u=>u.p)}t.turn=o[0];for(let a=0;a<n;a++)I(t,a,5);return t}function I(e,n,r){let t=e.players[n];for(;t.hand.length<r;){if(t.deck.length===0){if(t.discard.length===0)break;t.deck=q(e,t.discard),t.discard=[]}t.hand.push(t.deck.pop())}}function C(e,n,r,t){for(let o=0;o<e.players.length;o++){let s=e.players[o];if(!(n==="home"&&s.seat!==t))for(let a=0;a<s.pegs.length;a++){let l=s.pegs[a];if(l.zone===n&&l.idx===r)return{p:o,g:a}}}return null}function E(e,n,r){let t=C(e,r.zone,r.idx,r.seat);return t?t.p===n?{ok:!1,bump:null}:{ok:!0,bump:t}:{ok:!0,bump:null}}function D(e,n,r,t,o){let s=e.players[n],a=s.seat,l=s.pegs[r],u={zone:l.zone,idx:l.idx,seat:a},p=[];for(let c=0;c<t;c++){let d;if(u.zone==="home"){if(u.idx+1>=4)return{path:null,ownBlocked:!1};d={zone:"home",idx:u.idx+1,seat:a}}else o==="fast"&&S(u.idx)&&u.idx!==w(a)?d={zone:"main",idx:O(u.idx+14)}:u.idx===$(a)?d={zone:"home",idx:0,seat:a}:d={zone:"main",idx:O(u.idx+1)};let b=C(e,d.zone,d.idx,d.seat);if(b&&b.p===n)return{path:null,ownBlocked:!0};p.push(d),u=d}return{path:p,ownBlocked:!1}}function A(e,n,r,t){let o=e.players[n],s=o.pegs[r],a={dests:[],ownBlocked:!1};if(s.zone==="pen"||s.zone==="bull")return a;let l=s.zone==="main"&&S(s.idx),u=l&&s.idx===w(o.seat),p=[];s.zone==="home"||!l||u?p.push("main"):s.fast?p.push("fast"):p.push("main","fast");for(let c of p){let d=D(e,n,r,t,c);if(d.ownBlocked&&(a.ownBlocked=!0),d.path){let b=d.path[d.path.length-1],k=c==="fast"&&b.zone==="main"&&S(b.idx),x=E(e,n,b),P=!k&&b.zone==="main"&&S(b.idx)&&e.rules.cornerIsFastTrack!==!1;x.ok&&a.dests.push({to:{zone:b.zone,idx:b.idx,fast:k,...P?{landed:P}:{}},path:d.path,bump:x.bump})}if(c==="main"&&s.zone==="main"&&t>=2){let b=D(e,n,r,t-1,"main");if(b.path){let k=b.path[b.path.length-1];if(k.zone==="main"&&S(k.idx)){let x=E(e,n,{zone:"bull",idx:0});x.ok&&a.dests.push({to:{zone:"bull",idx:0,fast:!1},path:[...b.path,{zone:"bull",idx:0}],bump:x.bump})}}}}return a}function V(e,n,r,t){let o=e.players[n],s=o.pegs[r],a={dests:[],ownBlocked:!1};if(s.zone!=="main"||s.fast&&s.idx!==w(o.seat+1))return a;let l=[],u=s.idx,p=-1;for(let c=0;c<t;c++){u=O(u-1);let d=C(e,"main",u);if(d&&d.p===n){p=c;break}l.push({zone:"main",idx:u})}if(p>=0&&(a.ownBlocked=!0),p<0){let c=l[l.length-1],d=E(e,n,c);d.ok&&a.dests.push({to:{zone:"main",idx:c.idx,fast:!1,...S(c.idx)&&e.rules.cornerIsFastTrack!==!1?{landed:!0}:{}},path:l,bump:d.bump})}if(t>=2&&(p<0||p>=t-1)){let c=l.slice(0,t-1),d=c[c.length-1];if(d&&S(d.idx)){let b=E(e,n,{zone:"bull",idx:0});b.ok&&a.dests.push({to:{zone:"bull",idx:0,fast:!1},path:[...c,{zone:"bull",idx:0}],bump:b.bump})}}return a}function T(e,n){if(!e.teams)return[n];let r=[];return e.teams.forEach((t,o)=>{t===e.teams[n]&&r.push(o)}),r}function Y(e,n,r){let t=e.players[n],o=t.pegs[r];return o.zone!=="main"||!o.fast&&!o.landed?null:((w(t.seat)-o.idx)/14%6+6)%6}function be(e,n){let r=null,t=99;for(let o=0;o<4;o++){let s=Y(e,n,o);s!==null&&s<t&&(t=s,r=o)}return r}function F(e,n){let r=null,t=99;for(let o of T(e,n))for(let s=0;s<4;s++){let a=Y(e,o,s);a!==null&&a<t&&(t=a,r={p:o,g:s})}return r}function z(e){return JSON.parse(JSON.stringify(e))}function _(e,n,r,t,o){o&&(e.players[o.p].pegs[o.g]={zone:"pen",idx:o.g,fast:!1}),e.players[n].pegs[r]={zone:t.zone,idx:t.idx,fast:t.fast,...t.landed?{landed:!0}:{}}}var M=e=>`${e.zone}.${e.idx}`;function K(e,n){let r=e.turn,o=e.players[r].hand.find(i=>i.id===n);if(!o||e.winner!==null)return[];let s=o.rank,a=Q(s),l=T(e,r),u=F(e,r),p=(i,f)=>!!f&&i.p===f.p&&i.g===f.g,c=[];for(let i of l)for(let f=0;f<4;f++)c.push({p:i,g:f});let d=u?[u]:c,b=i=>i.p===r?`${i.g}`:`${i.p}.${i.g}`,k=!1,x=[],P=(i,f,m)=>({key:`m:${i}:${b(f)}>${M(m.to)}`,type:"move",dir:i,parts:[{p:f.p,g:f.g,to:m.to,path:m.path,bump:m.bump}]}),N=i=>{let f=[];for(let m of d){let g=V(e,m.p,m.g,i);p(m,u)&&g.ownBlocked&&(k=!0);for(let h of g.dests)f.push(P("back",m,h))}return f},v=()=>u&&k?[{key:`pen:${b(u)}`,type:"penalty",p:u.p,g:u.g}]:[{key:"none",type:"none"}];if(s==="4"){let i=N(a);return i.length?i:v()}for(let i of d){let f=A(e,i.p,i.g,a);p(i,u)&&f.ownBlocked&&(k=!0);for(let m of f.dests)x.push(P("fwd",i,m))}if(s==="7")for(let i of d)for(let f=1;f<=6;f++)for(let m of A(e,i.p,i.g,f).dests){if(m.to.zone==="main"&&S(m.to.idx))continue;let g=z(e);_(g,i.p,i.g,m.to,m.bump);let h=F(g,r);for(let y of h?[h]:c)if(!p(y,i))for(let R of A(g,y.p,y.g,7-f).dests)x.push({key:`m:fwd:${b(i)}>${M(m.to)}|${b(y)}>${M(R.to)}`,type:"move",dir:"fwd",parts:[{p:i.p,g:i.g,to:m.to,path:m.path,bump:m.bump},{p:y.p,g:y.g,to:R.to,path:R.path,bump:R.bump}]})}if(s==="JK"&&e.rules.jokerBackOne===!0&&x.push(...N(1)),!u&&(s==="A"||s==="JK"||s==="6"))for(let i of l){let f=e.players[i],m=f.pegs.findIndex(y=>y.zone==="pen");if(m<0)continue;let g={zone:"main",idx:L(f.seat),fast:!1},h=E(e,i,g);h.ok&&x.push({key:i===r?"x":`x:${i}`,type:"exit",p:i,g:m,to:g,path:[{zone:"main",idx:g.idx}],bump:h.bump})}if(!u&&(s==="K"||s==="Q"||s==="J"))for(let i of l){let f=e.players[i],m=f.pegs.findIndex(y=>y.zone==="bull");if(m<0)continue;let g={zone:"main",idx:w(f.seat),fast:!1},h=E(e,i,g);h.ok&&x.push({key:`b:${b({p:i,g:m})}`,type:"bullExit",p:i,g:m,to:g,path:[{zone:"main",idx:g.idx}],bump:h.bump})}if(s==="J"){let i=[];e.players.forEach((f,m)=>f.pegs.forEach((g,h)=>{(g.zone==="main"||g.zone==="bull")&&i.push({p:m,g:h})}));for(let f=0;f<i.length;f++)for(let m=f+1;m<i.length;m++){let g=i[f],h=i[m];g.p!==h.p&&(e.rules.jackSwapNeedsOwnPeg&&!l.includes(g.p)&&!l.includes(h.p)||u&&!p(g,u)&&!p(h,u)||x.push({key:`s:${g.p}.${g.g}-${h.p}.${h.g}`,type:"swap",a:g,b:h}))}}if(x.length)return x;if(u&&k)return v();let J=N(a);return J.length?J:v()}function W(e,n,r){let t=K(e,n).find(c=>c.key===r);if(!t)throw new Error(`Illegal move ${r} for card ${n}`);let o=z(e),s=o.turn,a=o.players[s],l=a.hand.findIndex(c=>c.id===n),u=a.hand.splice(l,1)[0];switch(a.discard.push(u),o.moveCount++,t.type){case"move":for(let c of t.parts)_(o,c.p,c.g,c.to,c.bump);break;case"exit":case"bullExit":_(o,t.p,t.g,t.to,t.bump);break;case"swap":{let c=o.players[t.a.p].pegs[t.a.g],d=o.players[t.b.p].pegs[t.b.g],b={zone:d.zone,idx:d.idx,fast:!1},k={zone:c.zone,idx:c.idx,fast:!1};o.players[t.a.p].pegs[t.a.g]=b,o.players[t.b.p].pegs[t.b.g]=k;break}case"penalty":o.players[t.p].pegs[t.g]={zone:"pen",idx:t.g,fast:!1};break;case"none":break}let p=T(o,s);return p.every(c=>o.players[c].pegs.every(d=>d.zone==="home"))?(o.winner=s,o.winners=p,o):(B.has(u.rank)?a.hand.length===0&&I(o,s,5):(I(o,s,5),o.turn=(s+1)%o.players.length),o)}function ge(e,n){return{...z({rules:e.rules,teams:e.teams,turn:e.turn,winner:e.winner,winners:e.winners,cuts:e.cuts,moveCount:e.moveCount}),players:e.players.map((r,t)=>({seat:r.seat,name:r.name,bot:r.bot,pegs:z(r.pegs),handCount:r.hand.length,deckCount:r.deck.length,lastDiscard:r.discard.length?r.discard[r.discard.length-1]:null,hand:t===n?z(r.hand):null}))}}function he(e,n){if(e.zone==="pen")return 95;if(e.zone==="home")return(3-e.idx)*.3;if(e.zone==="bull")return 15;let r=O($(n)-e.idx);if(S(e.idx)&&e.idx!==w(n)){let o=((w(n)-e.idx)/14%6+6)%6+7;return 4+(e.fast?o:Math.min(o,r))}return 4+r}function ee(e,n){if(e.winner!==null)return e.winners.includes(n)?1e4:-1e4;let r=T(e,n),t=0,o=0;return e.players.forEach((s,a)=>{let l=s.pegs.reduce((u,p)=>u+he(p,s.seat),0);r.includes(a)?t+=l:o+=l}),-t/r.length+.6*o/Math.max(1,e.players.length-r.length)}function xe(e){let n=e.turn,r=e.players[n],t=r.pegs.filter(l=>l.zone==="pen").length,o=null,s=-1/0,a=new Set;for(let l of r.hand)if(!a.has(l.rank)){a.add(l.rank);for(let u of K(e,l.id)){let p=ee(W(e,l.id,u.key),n);B.has(l.rank)&&(p+=1);let c=l.rank==="A"||l.rank==="JK"||l.rank==="6";c&&u.type!=="exit"&&t>0&&(p-=6),u.type==="none"&&(p-=c?8:.5),p>s&&(s=p,o={cardId:l.id,move:u})}}return o}return ae(ke);})();
+<script>var FT=(()=>{var G=Object.defineProperty;var ne=Object.getOwnPropertyDescriptor;var oe=Object.getOwnPropertyNames;var te=Object.prototype.hasOwnProperty;var re=(e,n)=>{for(var r in n)G(e,r,{get:n[r],enumerable:!0})},se=(e,n,r,o)=>{if(n&&typeof n=="object"||typeof n=="function")for(let t of oe(n))!te.call(e,t)&&t!==r&&G(e,t,{get:()=>n[t],enumerable:!(o=ne(n,t))||o.enumerable});return e};var ae=e=>se(G({},"__esModule",{value:!0}),e);var ke={};re(ke,{DEFAULT_RULES:()=>Z,HAND_SIZE:()=>pe,HOME_ENTRANCE_OFFSET:()=>fe,HOME_LEN:()=>ce,PEN_EXIT_OFFSET:()=>de,PLAY_AGAIN:()=>B,SEATS:()=>ue,SEATS_FOR:()=>j,SECTION:()=>le,TRACK:()=>ie,applyMove:()=>W,cardValue:()=>Q,chooseBotMove:()=>xe,createGame:()=>me,evaluate:()=>ee,ftIndex:()=>E,genBackward:()=>V,genForward:()=>A,homeEntrance:()=>$,isFT:()=>S,legalMoves:()=>K,mates:()=>w,newDeck:()=>X,occupant:()=>C,penExit:()=>L,priorityFastPeg:()=>be,priorityFastRef:()=>F,viewFor:()=>ge});var ue=6,le=14,ie=84,ce=4,pe=5,fe=7,de=9,Z={jackSwapNeedsOwnPeg:!0,cornerIsFastTrack:!0,jokerBackOne:!1},B=new Set(["A","JK","K","Q","J","6"]),j={2:[0,3],3:[0,2,4],4:[0,1,3,4],5:[0,1,2,3,4],6:[0,1,2,3,4,5]},E=e=>(e%6+6)%6*14,$=e=>e*14+7,L=e=>e*14+9,S=e=>e%14===0,O=e=>(e%84+84)%84;function Q(e){switch(e){case"A":case"JK":case"J":case"Q":case"K":return 1;default:return parseInt(e,10)}}function U(e){let n=e.rng=e.rng+1831565813|0;return n=Math.imul(n^n>>>15,n|1),n^=n+Math.imul(n^n>>>7,n|61),((n^n>>>14)>>>0)/4294967296}function q(e,n){for(let r=n.length-1;r>0;r--){let o=Math.floor(U(e)*(r+1));[n[r],n[o]]=[n[o],n[r]]}return n}function X(){let e=["A","2","3","4","5","6","7","8","9","10","J","Q","K"],n=["S","H","D","C"],r=[],o=0;for(let t of n)for(let s of e)r.push({id:o++,rank:s,suit:t});return r.push({id:o++,rank:"JK",suit:null},{id:o++,rank:"JK",suit:null}),r}var H=["2","3","4","5","6","7","8","9","10","J","Q","K","A","JK"];function me(e){var c;let n=e.players.length,r=j[n];if(!r)throw new Error("Fast Track needs 2 to 6 players");let o=e.double===!0&&(n===4||n===6),t=e.colors,s=Array.isArray(t)&&t.length===n&&new Set(t).size===n&&t.every(l=>Number.isInteger(l)&&l>=0&&l<6),a={rules:{...Z,...e.rules||{}},...o?{double:!0}:{},...s?{colors:[...t]}:{},teams:o||e.teams==="pairs"&&(n===4||n===6)?Array.from({length:n},(l,i)=>i%(n/2)):e.teams==="triples"&&n===6?Array.from({length:n},(l,i)=>i%2):null,players:[],turn:0,winner:null,winners:[],rng:((c=e.seed)!=null?c:Math.floor(Math.random()*2**31))|0,cuts:[],moveCount:0};e.players.forEach((l,i)=>{let f=q(a,X());a.players.push({seat:r[i],name:l.name,bot:!!l.bot,deck:f,hand:[],discard:[],pegs:[0,1,2,3].map(b=>({zone:"pen",idx:b,fast:!1}))})});let p=a.players.map((l,i)=>i);for(;p.length>1;){let l=p.map(f=>{let b=a.players[f].deck;return{p:f,card:b[Math.floor(U(a)*b.length)]}});a.cuts=l;let i=Math.max(...l.map(f=>H.indexOf(f.card.rank)));p=l.filter(f=>H.indexOf(f.card.rank)===i).map(f=>f.p)}a.turn=p[0];for(let l=0;l<n;l++)M(a,l,5);return a}function M(e,n,r){let o=e.players[n];for(;o.hand.length<r;){if(o.deck.length===0){if(o.discard.length===0)break;o.deck=q(e,o.discard),o.discard=[]}o.hand.push(o.deck.pop())}}function C(e,n,r,o){for(let t=0;t<e.players.length;t++){let s=e.players[t];if(!(n==="home"&&s.seat!==o))for(let a=0;a<s.pegs.length;a++){let p=s.pegs[a];if(p.zone===n&&p.idx===r)return{p:t,g:a}}}return null}function z(e,n,r){let o=C(e,r.zone,r.idx,r.seat);return o?o.p===n?{ok:!1,bump:null}:{ok:!0,bump:o}:{ok:!0,bump:null}}function D(e,n,r,o,t){let s=e.players[n],a=s.seat,p=s.pegs[r],c={zone:p.zone,idx:p.idx,seat:a},l=[];for(let i=0;i<o;i++){let f;if(c.zone==="home"){if(c.idx+1>=4)return{path:null,ownBlocked:!1};f={zone:"home",idx:c.idx+1,seat:a}}else t==="fast"&&S(c.idx)&&c.idx!==E(a)?f={zone:"main",idx:O(c.idx+14)}:c.idx===$(a)?f={zone:"home",idx:0,seat:a}:f={zone:"main",idx:O(c.idx+1)};let b=C(e,f.zone,f.idx,f.seat);if(b&&b.p===n)return{path:null,ownBlocked:!0};l.push(f),c=f}return{path:l,ownBlocked:!1}}function A(e,n,r,o){let t=e.players[n],s=t.pegs[r],a={dests:[],ownBlocked:!1};if(s.zone==="pen"||s.zone==="bull")return a;let p=s.zone==="main"&&S(s.idx),c=p&&s.idx===E(t.seat),l=[];s.zone==="home"||!p||c?l.push("main"):s.fast?l.push("fast"):l.push("main","fast");for(let i of l){let f=D(e,n,r,o,i);if(f.ownBlocked&&(a.ownBlocked=!0),f.path){let b=f.path[f.path.length-1],k=i==="fast"&&b.zone==="main"&&S(b.idx),x=z(e,n,b),P=!k&&b.zone==="main"&&S(b.idx)&&e.rules.cornerIsFastTrack!==!1;x.ok&&a.dests.push({to:{zone:b.zone,idx:b.idx,fast:k,...P?{landed:P}:{}},path:f.path,bump:x.bump})}if(i==="main"&&s.zone==="main"&&o>=2){let b=D(e,n,r,o-1,"main");if(b.path){let k=b.path[b.path.length-1];if(k.zone==="main"&&S(k.idx)){let x=z(e,n,{zone:"bull",idx:0});x.ok&&a.dests.push({to:{zone:"bull",idx:0,fast:!1},path:[...b.path,{zone:"bull",idx:0}],bump:x.bump})}}}}return a}function V(e,n,r,o){let t=e.players[n],s=t.pegs[r],a={dests:[],ownBlocked:!1};if(s.zone!=="main"||s.fast&&s.idx!==E(t.seat+1))return a;let p=[],c=s.idx,l=-1;for(let i=0;i<o;i++){c=O(c-1);let f=C(e,"main",c);if(f&&f.p===n){l=i;break}p.push({zone:"main",idx:c})}if(l>=0&&(a.ownBlocked=!0),l<0){let i=p[p.length-1],f=z(e,n,i);f.ok&&a.dests.push({to:{zone:"main",idx:i.idx,fast:!1,...S(i.idx)&&e.rules.cornerIsFastTrack!==!1?{landed:!0}:{}},path:p,bump:f.bump})}return a}function w(e,n){if(!e.teams)return[n];let r=[];return e.teams.forEach((o,t)=>{o===e.teams[n]&&r.push(t)}),r}function Y(e,n,r){let o=e.players[n],t=o.pegs[r];return t.zone!=="main"||!t.fast&&!t.landed?null:((E(o.seat)-t.idx)/14%6+6)%6}function be(e,n){let r=null,o=99;for(let t=0;t<4;t++){let s=Y(e,n,t);s!==null&&s<o&&(o=s,r=t)}return r}function F(e,n){let r=null,o=99;for(let t of w(e,n))for(let s=0;s<4;s++){let a=Y(e,t,s);a!==null&&a<o&&(o=a,r={p:t,g:s})}return r}function T(e){return JSON.parse(JSON.stringify(e))}function _(e,n,r,o,t){t&&(e.players[t.p].pegs[t.g]={zone:"pen",idx:t.g,fast:!1}),e.players[n].pegs[r]={zone:o.zone,idx:o.idx,fast:o.fast,...o.landed?{landed:!0}:{}}}var I=e=>`${e.zone}.${e.idx}`;function K(e,n){let r=e.turn,t=e.players[r].hand.find(u=>u.id===n);if(!t||e.winner!==null)return[];let s=t.rank,a=Q(s),p=w(e,r),c=F(e,r),l=(u,d)=>!!d&&u.p===d.p&&u.g===d.g,i=[];for(let u of p)for(let d=0;d<4;d++)i.push({p:u,g:d});let f=c?[c]:i,b=u=>u.p===r?`${u.g}`:`${u.p}.${u.g}`,k=!1,x=[],P=(u,d,m)=>({key:`m:${u}:${b(d)}>${I(m.to)}`,type:"move",dir:u,parts:[{p:d.p,g:d.g,to:m.to,path:m.path,bump:m.bump}]}),N=u=>{let d=[];for(let m of f){let g=V(e,m.p,m.g,u);l(m,c)&&g.ownBlocked&&(k=!0);for(let h of g.dests)d.push(P("back",m,h))}return d},v=()=>c&&k?[{key:`pen:${b(c)}`,type:"penalty",p:c.p,g:c.g}]:[{key:"none",type:"none"}];if(s==="4"){let u=N(a);return u.length?u:v()}for(let u of f){let d=A(e,u.p,u.g,a);l(u,c)&&d.ownBlocked&&(k=!0);for(let m of d.dests)x.push(P("fwd",u,m))}if(s==="7")for(let u of f)for(let d=1;d<=6;d++)for(let m of A(e,u.p,u.g,d).dests){if(m.to.zone==="main"&&S(m.to.idx))continue;let g=T(e);_(g,u.p,u.g,m.to,m.bump);let h=F(g,r);for(let y of h?[h]:i)if(!l(y,u))for(let R of A(g,y.p,y.g,7-d).dests)x.push({key:`m:fwd:${b(u)}>${I(m.to)}|${b(y)}>${I(R.to)}`,type:"move",dir:"fwd",parts:[{p:u.p,g:u.g,to:m.to,path:m.path,bump:m.bump},{p:y.p,g:y.g,to:R.to,path:R.path,bump:R.bump}]})}if(s==="JK"&&e.rules.jokerBackOne===!0&&x.push(...N(1)),!c&&(s==="A"||s==="JK"||s==="6"))for(let u of p){let d=e.players[u],m=d.pegs.findIndex(y=>y.zone==="pen");if(m<0)continue;let g={zone:"main",idx:L(d.seat),fast:!1},h=z(e,u,g);h.ok&&x.push({key:u===r?"x":`x:${u}`,type:"exit",p:u,g:m,to:g,path:[{zone:"main",idx:g.idx}],bump:h.bump})}if(!c&&(s==="K"||s==="Q"||s==="J"))for(let u of p){let d=e.players[u],m=d.pegs.findIndex(y=>y.zone==="bull");if(m<0)continue;let g={zone:"main",idx:E(d.seat),fast:!1},h=z(e,u,g);h.ok&&x.push({key:`b:${b({p:u,g:m})}`,type:"bullExit",p:u,g:m,to:g,path:[{zone:"main",idx:g.idx}],bump:h.bump})}if(s==="J"){let u=[];e.players.forEach((d,m)=>d.pegs.forEach((g,h)=>{(g.zone==="main"||g.zone==="bull")&&u.push({p:m,g:h})}));for(let d=0;d<u.length;d++)for(let m=d+1;m<u.length;m++){let g=u[d],h=u[m];g.p!==h.p&&(e.rules.jackSwapNeedsOwnPeg&&!p.includes(g.p)&&!p.includes(h.p)||c&&!l(g,c)&&!l(h,c)||x.push({key:`s:${g.p}.${g.g}-${h.p}.${h.g}`,type:"swap",a:g,b:h}))}}if(x.length)return x;if(c&&k)return v();let J=N(a);return J.length?J:v()}function W(e,n,r){let o=K(e,n).find(i=>i.key===r);if(!o)throw new Error(`Illegal move ${r} for card ${n}`);let t=T(e),s=t.turn,a=t.players[s],p=a.hand.findIndex(i=>i.id===n),c=a.hand.splice(p,1)[0];switch(a.discard.push(c),t.moveCount++,o.type){case"move":for(let i of o.parts)_(t,i.p,i.g,i.to,i.bump);break;case"exit":case"bullExit":_(t,o.p,o.g,o.to,o.bump);break;case"swap":{let i=t.players[o.a.p].pegs[o.a.g],f=t.players[o.b.p].pegs[o.b.g],b={zone:f.zone,idx:f.idx,fast:!1},k={zone:i.zone,idx:i.idx,fast:!1};t.players[o.a.p].pegs[o.a.g]=b,t.players[o.b.p].pegs[o.b.g]=k;break}case"penalty":t.players[o.p].pegs[o.g]={zone:"pen",idx:o.g,fast:!1};break;case"none":break}let l=w(t,s);return l.every(i=>t.players[i].pegs.every(f=>f.zone==="home"))?(t.winner=s,t.winners=l,t):(B.has(c.rank)?a.hand.length===0&&M(t,s,5):(M(t,s,5),t.turn=(s+1)%t.players.length),t)}function ge(e,n){return{...T({rules:e.rules,teams:e.teams,double:!!e.double,colors:e.colors||null,turn:e.turn,winner:e.winner,winners:e.winners,cuts:e.cuts,moveCount:e.moveCount}),players:e.players.map((r,o)=>({seat:r.seat,name:r.name,bot:r.bot,pegs:T(r.pegs),handCount:r.hand.length,deckCount:r.deck.length,lastDiscard:r.discard.length?r.discard[r.discard.length-1]:null,hand:o===n||e.double&&w(e,n).includes(o)?T(r.hand):null}))}}function he(e,n){if(e.zone==="pen")return 95;if(e.zone==="home")return(3-e.idx)*.3;if(e.zone==="bull")return 15;let r=O($(n)-e.idx);if(S(e.idx)&&e.idx!==E(n)){let t=((E(n)-e.idx)/14%6+6)%6+7;return 4+(e.fast?t:Math.min(t,r))}return 4+r}function ee(e,n){if(e.winner!==null)return e.winners.includes(n)?1e4:-1e4;let r=w(e,n),o=0,t=0;return e.players.forEach((s,a)=>{let p=s.pegs.reduce((c,l)=>c+he(l,s.seat),0);r.includes(a)?o+=p:t+=p}),-o/r.length+.6*t/Math.max(1,e.players.length-r.length)}function xe(e){let n=e.turn,r=e.players[n],o=r.pegs.filter(p=>p.zone==="pen").length,t=null,s=-1/0,a=new Set;for(let p of r.hand)if(!a.has(p.rank)){a.add(p.rank);for(let c of K(e,p.id)){let l=ee(W(e,p.id,c.key),n);B.has(p.rank)&&(l+=1);let i=p.rank==="A"||p.rank==="JK"||p.rank==="6";i&&c.type!=="exit"&&o>0&&(l-=6),c.type==="none"&&(l-=i?8:.5),l>s&&(s=l,t={cardId:p.id,move:c})}}return t}return ae(ke);})();
 </script>
 <script>
 (() => {
@@ -620,7 +632,7 @@ function renderCustomBox() {
   $('baseSel').value = baseTheme().id;
   const grid = $('colorGrid'); grid.textContent = '';
   customColors().forEach((c, seat) => {
-    const pl = S && S.players.find((x) => x.seat === seat);
+    const pl = S && S.players.find((x, pi) => colorOf(pi) === seat);
     const lab = document.createElement('label'), inp = document.createElement('input'), sp = document.createElement('span');
     inp.type = 'color'; inp.id = 'col' + seat; inp.value = c; lab.htmlFor = inp.id;
     sp.textContent = pl ? pl.name : 'Empty seat';
@@ -741,8 +753,8 @@ function drawLabels() {
     const text = label(p), w = text.length * fs * 0.6 + fs * 2.1, h = fs * 1.6;
     const x = Math.max(cam.bx0 + w / 2 + 4, Math.min(cam.bx1 - w / 2 - 4, q.x));
     const g = svg('g', { class: 'plabel' + (S.turn === p && S.winner === null ? ' active' : ''), transform: `translate(${x.toFixed(1)},${q.y.toFixed(1)})` }, layer);
-    svg('rect', { x: -w / 2, y: -h / 2, width: w, height: h, rx: h / 2, style: `stroke:var(--s${pl.seat})` }, g);
-    svg('circle', { cx: -w / 2 + fs * 0.8, cy: 0, r: fs * 0.38, fill: `var(--s${pl.seat})`, stroke: 'rgba(0,0,0,.4)', 'stroke-width': 1.5 }, g);
+    svg('rect', { x: -w / 2, y: -h / 2, width: w, height: h, rx: h / 2, style: `stroke:var(--c${pl.seat})` }, g);
+    svg('circle', { cx: -w / 2 + fs * 0.8, cy: 0, r: fs * 0.38, fill: `var(--c${pl.seat})`, stroke: 'rgba(0,0,0,.4)', 'stroke-width': 1.5 }, g);
     const t = svg('text', { x: -w / 2 + fs * 1.45, y: fs * 0.35, 'font-size': fs.toFixed(1) }, g); t.textContent = text;
   });
 }
@@ -752,7 +764,7 @@ function drawBoard() {
   svg('circle', { cx: C, cy: C, r: 462, class: 'b-face' }, g);
   svg('rect', { id: 'grain', x: 0, y: 0, width: 1000, height: 1000, 'clip-path': 'url(#faceClip)', filter: 'url(#wood)', opacity: .3 }, g);
   for (let s = 0; s < 6; s++) {
-    const col = `var(--s${s})`, a = armAngle(s), pa = a + Math.PI / 6;
+    const col = `var(--c${s})`, a = armAngle(s), pa = a + Math.PI / 6;
     // pen wedge
     svg('polygon', { points: pts([polar(pa, 6.0 * D, 0), polar(pa, 9.25 * D, -1.9 * D), polar(pa, 9.25 * D, 1.9 * D)]), fill: col, stroke: col, 'stroke-width': 18, 'stroke-linejoin': 'round' }, g);
     // centre wedge pointing at this colour's fast-track corner
@@ -763,7 +775,7 @@ function drawBoard() {
   svg('polygon', { points: loop, class: 'b-trackline', 'stroke-width': D * 0.98 + 8 }, g);
   svg('polygon', { points: loop, class: 'b-track', 'stroke-width': D * 0.98 }, g);
   for (let s = 0; s < 6; s++) {
-    const col = `var(--s${s})`, a = armAngle(s);
+    const col = `var(--c${s})`, a = armAngle(s);
     // home lane
     const p1 = polar(a, U - 4.45 * D, 0), p2 = polar(a, U - 0.62 * D, 0);
     svg('line', { x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y, stroke: 'var(--trackline)', 'stroke-width': D * 1.0 + 8, 'stroke-linecap': 'round' }, g);
@@ -785,7 +797,37 @@ let turnPlays = null; // { p, steps: [{ card, what }], over }
 let turns = [], cutNote = ''; // every turn so far, for the history
 const SPEEDS = { slow: { think: 1700, step: 240, after: 1100 }, normal: { think: 900, step: 150, after: 550 }, fast: { think: 400, step: 90, after: 200 } };
 let speed = 'slow';
-let ME = 0; // which player this screen belongs to
+let ME = 0; // the seat this screen is playing right now
+let MINE = [0]; // every seat this screen plays: one, or two when each person has two colors
+const isMine = (p) => MINE.includes(p);
+const person = (p) => (S.double ? p % (S.players.length / 2) : p); // who controls a seat
+const colorOf = (p) => (S.colors ? S.colors[p] : S.players[p].seat);
+/** Point each arm of the board at the theme color its player chose. */
+function applySeatColors() {
+  const st = document.documentElement.style, map = {};
+  if (S && S.colors) {
+    S.players.forEach((pl, i) => { map[pl.seat] = S.colors[i]; });
+    const free = [0, 1, 2, 3, 4, 5].filter((c) => !Object.values(map).includes(c));
+    for (let seat = 0; seat < 6; seat++) if (!(seat in map)) map[seat] = free.shift();
+  }
+  for (let seat = 0; seat < 6; seat++) st.setProperty('--c' + seat, `var(--s${map[seat] ?? seat})`);
+}
+/** Two colors each: the same person is up again with their other color, so show that hand. */
+function switchSeat(p) { handOrders[ME] = handOrder; ME = p; handOrder = handOrders[p] || []; sel = null; refresh(); }
+const defaultColors = (n, dbl) => { const seats = E.SEATS_FOR[dbl ? n * 2 : n] || E.SEATS_FOR[6]; return Array.from({ length: n }, (_, i) => (dbl ? [seats[i], seats[i + n]] : [seats[i]])); };
+function cycleColor(colors, slot, k) { // next theme color nobody else at the table has
+  const used = new Set(); colors.forEach((c, i) => c.forEach((v, j) => { if (i !== slot || j !== k) used.add(v); }));
+  let v = colors[slot][k]; for (let n = 0; n < 6; n++) { v = (v + 1) % 6; if (!used.has(v)) break; }
+  colors[slot][k] = v;
+}
+/** Build a game from the people at the table (in seat order), the chosen options and each person's colors. */
+function makeGame(people, o, colors) {
+  o = o || {}; const P = people.length, dbl = !!o.double && (P === 2 || P === 3);
+  const players = (dbl ? [...people, ...people] : people).map((x) => ({ name: x.name, bot: !!x.bot })), n = players.length;
+  const teams = dbl ? 'pairs' : o.teams === 'pairs' && (n === 4 || n === 6) ? 'pairs' : o.teams === 'triples' && n === 6 ? 'triples' : null;
+  const cols = colors && colors.length === P && colors.every((c) => c.length === (dbl ? 2 : 1)) ? players.map((_, i) => colors[i % P][i < P ? 0 : 1]) : undefined;
+  return E.createGame({ players, rules: o.rules, teams, double: dbl, colors: cols });
+}
 let demo = false, atHome = false, parked = null, passPlay = false, covered = false, handOrders = {}, clock = null;
 const SYMBOLS = ['\u25CF', '\u25B2', '\u25A0', '\u25C6', '\u2605', '\u271A']; // one shape per color, for players who cannot tell the colors apart
 const pref = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v === '1'; } catch (e) { return d; } };
@@ -822,7 +864,7 @@ function renderStats() {
   const rate = Math.round((st.won / st.played) * 100);
   const tiles = [['Games', st.played, 0], ['Wins', st.won, 1, rate], ['Pegs you bumped', st.bumps, 5], ['Times bumped', st.bumped, 3]];
   for (const [lab, num, seat, pct] of tiles) {
-    const d = document.createElement('div'); d.className = 'stat'; d.style.setProperty('--sc', `var(--s${seat})`);
+    const d = document.createElement('div'); d.className = 'stat'; d.style.setProperty('--sc', `var(--c${seat})`);
     const n = document.createElement('span'), l = document.createElement('span'); n.className = 'num'; n.textContent = num > 9999 ? '9999+' : String(num); l.className = 'lab'; l.textContent = pct === undefined ? lab : `${lab} \u00B7 ${pct}%`;
     d.append(n, l);
     if (pct !== undefined) { const r = document.createElement('span'), f = document.createElement('i'); r.className = 'rate'; r.setAttribute('aria-hidden', 'true'); f.style.width = pct + '%'; r.appendChild(f); d.appendChild(r); }
@@ -863,7 +905,7 @@ function buildPegs() {
   for (const k in pegEls) delete pegEls[k];
   for (const k in pegPos) delete pegPos[k];
   S.players.forEach((pl, p) => pl.pegs.forEach((peg, g) => {
-    const el = svg('g', { class: 'peg' }, $('gPegs')), col = `var(--s${pl.seat})`;
+    const el = svg('g', { class: 'peg' }, $('gPegs')), col = `var(--c${pl.seat})`;
     pegEls[`${p}:${g}`] = {
       g: el,
       stem: svg('polygon', { class: 'stem', fill: col }, el),
@@ -925,15 +967,15 @@ function does(rank) {
 function addLog(text) { logLines.unshift(text); if (logLines.length > 60) logLines.pop(); }
 function describe(p, card, move) {
   const other = (ref) => S.players[ref.p].name;
-  const whose = (o) => (o !== p ? `${S.players[o].name}'s peg` : '');
+  const whose = (o) => (o !== p && person(o) !== person(p) ? `${S.players[o].name}'s peg` : '');
   let what;
   if (move.type === 'none') what = 'no move possible';
   else if (move.type === 'penalty') what = 'fast-track peg blocked, back to the pen';
-  else if (move.type === 'exit') what = (move.p !== p ? `brought ${whose(move.p)} out` : 'brought a peg out') + (move.bump ? `, bumping ${other(move.bump)}` : '');
-  else if (move.type === 'bullExit') what = (move.p !== p ? `brought ${whose(move.p)} out of the bull's eye` : 'left the bull\'s eye') + (move.bump ? `, bumping ${other(move.bump)}` : '');
+  else if (move.type === 'exit') what = (whose(move.p) ? `brought ${whose(move.p)} out` : 'brought a peg out') + (move.bump ? `, bumping ${other(move.bump)}` : '');
+  else if (move.type === 'bullExit') what = (whose(move.p) ? `brought ${whose(move.p)} out of the bull's eye` : 'left the bull\'s eye') + (move.bump ? `, bumping ${other(move.bump)}` : '');
   else if (move.type === 'swap') { const o = move.a.p === p ? move.b : move.b.p === p ? move.a : null; what = o ? `swapped places with ${other(o)}` : `swapped ${other(move.a)} and ${other(move.b)}`; }
   else what = move.parts.map((pt) => {
-    let t = (move.dir === 'back' ? 'back ' : 'moved ') + (pt.p !== p ? whose(pt.p) + ' ' : '') + pt.path.length;
+    let t = (move.dir === 'back' ? 'back ' : 'moved ') + (whose(pt.p) ? whose(pt.p) + ' ' : '') + pt.path.length;
     if (pt.to.zone === 'home') t += ' into home'; else if (pt.to.zone === 'bull') t += ' into the bull\'s eye'; else if (pt.to.fast) t += ' along the fast track'; else if (pt.to.landed) t += ' onto the fast track';
     if (pt.bump) t += `, bumping ${other(pt.bump)}`;
     return t;
@@ -953,17 +995,40 @@ function hint() {
 // ---------- rendering ----------
 function renderPlayers() {
   const box = $('players'); box.textContent = '';
-  box.style.setProperty('--n', S.players.length);
+  const live = S.winner === null;
+  if (S.teams) { // one box per side, so it is clear who plays together and how the side is doing
+    const sides = [...new Set(S.teams)];
+    box.style.setProperty('--cols', sides.length);
+    sides.forEach((t) => {
+      const members = S.players.map((_, i) => i).filter((i) => S.teams[i] === t), on = live && members.includes(S.turn);
+      let home = 0, pen = 0; for (const i of members) for (const g of S.players[i].pegs) { if (g.zone === 'home') home++; else if (g.zone === 'pen') pen++; }
+      const chip = document.createElement('div'); chip.className = 'chip teamchip' + (on ? ' turn' : '');
+      chip.style.setProperty('--pc', `var(--c${S.players[members[0]].seat})`);
+      if (on) chip.setAttribute('aria-current', 'true');
+      const line = (idxs) => {
+        const el = document.createElement('span'); el.className = 'mline' + (live && idxs.includes(S.turn) ? ' now' : '');
+        for (const i of idxs) { const d = document.createElement('span'); d.className = 'dot' + (live && i === S.turn ? ' on' : ''); d.style.background = `var(--c${S.players[i].seat})`; el.appendChild(d); }
+        const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = S.double ? S.players[idxs[0]].name : label(idxs[0]); el.appendChild(nm);
+        return el;
+      };
+      if (S.double) chip.appendChild(line(members)); else members.forEach((i) => chip.appendChild(line([i])));
+      const tot = document.createElement('span'); tot.className = 'meta'; tot.textContent = `${home}/${members.length * 4} home \u00B7 ${pen} in pen`;
+      const ck = document.createElement('span'); ck.className = 'clock'; tot.appendChild(ck); chip.appendChild(tot);
+      box.appendChild(chip);
+    });
+    return;
+  }
+  const n = S.players.length;
+  box.style.setProperty('--cols', n >= 5 ? 3 : n === 4 && S.players.some((x) => x.name.length > 7) ? 2 : n); // extra rows before names get cut off
   S.players.forEach((pl, p) => {
     const chip = document.createElement('div');
-    chip.className = 'chip' + (S.turn === p && S.winner === null ? ' turn' : '');
-    chip.style.setProperty('--pc', `var(--s${pl.seat})`);
+    chip.className = 'chip' + (S.turn === p && live ? ' turn' : '');
+    chip.style.setProperty('--pc', `var(--c${pl.seat})`);
     const home = pl.pegs.filter((x) => x.zone === 'home').length, pen = pl.pegs.filter((x) => x.zone === 'pen').length;
     const lc = lastCard[p];
     chip.innerHTML = `<span class="dot"></span><span class="who"><span class="name"></span><span class="meta">${home}/4 home</span><span class="meta">${pen} in pen<span class="clock"></span></span></span><span class="mini ${lc ? (isRed(lc) ? 'red' : '') : 'empty'}">${lc ? cardShort(lc) : ''}</span>`;
     chip.querySelector('.name').textContent = label(p);
-    if (S.teams) { const tm = document.createElement('span'); tm.className = 'team'; tm.textContent = ' \u00B7 ' + 'ABC'[S.teams[p]]; tm.title = 'Team ' + 'ABC'[S.teams[p]]; chip.querySelector('.name').appendChild(tm); }
-    if (S.turn === p && S.winner === null) chip.setAttribute('aria-current', 'true');
+    if (S.turn === p && live) chip.setAttribute('aria-current', 'true');
     chip.querySelector('.mini').setAttribute('aria-label', lc ? 'Last card ' + cardName(lc) : 'No card played yet');
     box.appendChild(chip);
   });
@@ -974,10 +1039,11 @@ function brief(p, move) {
   const nm = (ref) => S.players[ref.p].name, hit = (b) => (b ? `, bumps ${nm(b)}` : '');
   if (move.type === 'none') return 'no move';
   if (move.type === 'penalty') return 'back to pen';
-  if (move.type === 'exit') return (move.p !== p ? `${S.players[move.p].name} out` : 'out of pen') + hit(move.bump);
+  const partner = (o) => o !== p && person(o) !== person(p);
+  if (move.type === 'exit') return (partner(move.p) ? `${S.players[move.p].name} out` : 'out of pen') + hit(move.bump);
   if (move.type === 'bullExit') return 'out of center' + hit(move.bump);
   if (move.type === 'swap') { const o = move.a.p === p ? move.b : move.b.p === p ? move.a : null; return o ? `swaps with ${nm(o)}` : `swaps ${nm(move.a)} and ${nm(move.b)}`; }
-  return move.parts.map((pt) => (pt.p !== p ? S.players[pt.p].name + ' ' : '') + (move.dir === 'back' ? '\u2212' : '+') + pt.path.length
+  return move.parts.map((pt) => (partner(pt.p) ? S.players[pt.p].name + ' ' : '') + (move.dir === 'back' ? '\u2212' : '+') + pt.path.length
     + (pt.to.zone === 'home' ? ' home' : pt.to.zone === 'bull' ? ' to center' : pt.to.fast || pt.to.landed ? ' fast track' : '') + hit(pt.bump)).join(' & ');
 }
 function stepsEl(t, live) {
@@ -996,9 +1062,9 @@ function stepsEl(t, live) {
 function renderTurnBar() {
   const box = $('turnbar'); box.textContent = '';
   const t = turnPlays, p = t ? t.p : S.turn, pl = S.players[p];
-  box.style.setProperty('--pc', `var(--s${pl.seat})`);
+  box.style.setProperty('--pc', `var(--c${pl.seat})`);
   const who = document.createElement('span'); who.className = 'whose';
-  who.textContent = p === ME && !demo && !passPlay ? 'Your move' : `${pl.name}'s move`;
+  who.textContent = isMine(p) && !demo && !passPlay ? 'Your move' : `${pl.name}'s move`;
   const e = document.createElement('span'); e.className = 'end';
   e.textContent = !t ? (p === ME ? 'Pick a card' : 'Choosing a card') : t.won ? 'Wins' : t.over ? 'Turn over' : 'Plays again';
   box.append(who, e);
@@ -1008,7 +1074,7 @@ function renderHistory() {
   const list = $('histList'); list.textContent = '';
   for (let i = turns.length - 1; i >= 0; i--) {
     const t = turns[i], pl = S.players[t.p], row = document.createElement('div');
-    row.className = 'hrow'; row.style.setProperty('--pc', `var(--s${pl.seat})`);
+    row.className = 'hrow'; row.style.setProperty('--pc', `var(--c${pl.seat})`);
     const who = document.createElement('span'); who.className = 'whose'; who.textContent = pl.name;
     row.append(who, stepsEl(t, false)); list.appendChild(row);
   }
@@ -1152,7 +1218,7 @@ function renderPrompt() {
   if (sel.picks.length) box.appendChild(button('Start over', () => { sel.picks = []; sel.ambiguous = null; refresh(); }));
 }
 function refresh() {
-  document.documentElement.style.setProperty('--turn', S.winner === null ? `var(--s${S.players[S.turn].seat})` : 'var(--accent)');
+  document.documentElement.style.setProperty('--turn', S.winner === null ? `var(--c${S.players[S.turn].seat})` : 'var(--accent)');
   if ($('histDlg').open) renderHistory();
   drawGlow(); drawLabels(); renderTurnBar(); renderPlayers(); renderHand(); renderPrompt(); renderOverlay(); }
 
@@ -1198,10 +1264,10 @@ async function showPlay(p, card, move, next) {
   busy = true; showing = true;
   const id = gameId;
   lastCard[p] = card;
-  const what = describe(p, card, move), other = demo || p !== ME, sp = demo ? SPEEDS.normal : SPEEDS[speed];
+  const what = describe(p, card, move), other = demo || !isMine(p), sp = demo ? SPEEDS.normal : SPEEDS[speed];
   if (!demo && !passPlay) {
     const hits = move.type === 'move' ? move.parts.map((x) => x.bump) : [move.bump];
-    for (const b of hits) { if (!b) continue; if (p === ME && b.p !== ME) stats.bumps++; else if (b.p === ME && p !== ME) stats.bumped++; }
+    for (const b of hits) { if (!b) continue; if (isMine(p) && !isMine(b.p)) stats.bumps++; else if (isMine(b.p) && !isMine(p)) stats.bumped++; }
   }
   addLog(`${S.players[p].name} played ${cardName(card)}: ${what}.`);
   if (!turnPlays || turnPlays.p !== p || turnPlays.over) { turnPlays = { p, steps: [], over: false }; turns.push(turnPlays); }
@@ -1224,16 +1290,16 @@ function advance() {
   if (net.mode === 'host') hostHousekeeping();
   if (S.winner !== null) {
     if (demo) { const id = gameId; setTimeout(() => { if (id === gameId && demo) startDemo(); }, 3500); return; }
-    const side = S.winners && S.winners.length ? S.winners : [S.winner], mine = side.includes(ME) && !passPlay;
-    const names = side.map((i) => S.players[i].name);
-    $('winTitle').textContent = mine ? (side.length > 1 ? 'Your team wins' : 'You win') : names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]} win` : `${names[0]} wins`;
+    const side = S.winners && S.winners.length ? S.winners : [S.winner], mine = side.some(isMine) && !passPlay;
+    const names = [...new Set(side.map((i) => S.players[i].name))];
+    $('winTitle').textContent = mine ? (side.length > 1 && !S.double ? 'Your team wins' : 'You win') : names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]} win` : `${names[0]} wins`;
     const party = mine || passPlay, wseat = S.players[S.winner].seat;
-    $('winText').textContent = (party ? `${side.length > 1 ? 'Every peg on the team is' : 'All four pegs are'} home after ${S.moveCount} cards.` : `Better luck next time. ${side.length > 1 ? 'They' : names[0]} got every peg home after ${S.moveCount} cards.`) + (net.mode === 'guest' && !net.server ? ' The host can start another game.' : '');
+    $('winText').textContent = (party ? `${side.length > 1 ? (S.double ? 'All eight pegs are' : 'Every peg on the team is') : 'All four pegs are'} home after ${S.moveCount} cards.` : `Better luck next time. ${names.length > 1 ? 'They' : names[0]} got every peg home after ${S.moveCount} cards.`) + (net.mode === 'guest' && !net.server ? ' The host can start another game.' : '');
     $('winDlg').classList.toggle('won', party);
-    $('winDlg').style.setProperty('--wc', party ? 'var(--accent)' : `var(--s${wseat})`);
+    $('winDlg').style.setProperty('--wc', party ? 'var(--accent)' : `var(--c${wseat})`);
     $('winArt').innerHTML = party
       ? '<svg viewBox="0 0 96 96"><path d="M30 14h36v20a18 18 0 0 1-36 0z" fill="var(--accent)" stroke="rgba(0,0,0,.45)" stroke-width="3" stroke-linejoin="round"/><path d="M30 20H16c0 14 6 20 15 21M66 20h14c0 14-6 20-15 21" fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"/><path d="M48 52v14M34 80h28l-4-12H38z" fill="var(--accent)" stroke="rgba(0,0,0,.45)" stroke-width="3" stroke-linejoin="round"/><path d="M48 21l3 7 7 .6-5.4 4.6 1.7 7L48 36.4 41.7 40.2l1.7-7L38 28.6l7-.6z" fill="#fff" opacity=".85"/></svg>'
-      : `<svg viewBox="0 0 96 96">${side.map((i, k) => { const x = 48 + (k - (side.length - 1) / 2) * 28, c = `var(--s${S.players[i].seat})`; return `<path d="M${x - 6} 84l3-34h6l3 34z" fill="${c}" stroke="rgba(0,0,0,.5)" stroke-width="2.5" stroke-linejoin="round"/><circle cx="${x}" cy="36" r="17" fill="${c}" stroke="rgba(0,0,0,.5)" stroke-width="2.5"/><circle cx="${x - 6}" cy="30" r="5" fill="#fff" opacity=".5"/>`; }).join('')}<ellipse cx="48" cy="86" rx="${20 + side.length * 12}" ry="5" fill="#000" opacity=".25"/></svg>`;
+      : `<svg viewBox="0 0 96 96">${side.map((i, k) => { const x = 48 + (k - (side.length - 1) / 2) * 28, c = `var(--c${S.players[i].seat})`; return `<path d="M${x - 6} 84l3-34h6l3 34z" fill="${c}" stroke="rgba(0,0,0,.5)" stroke-width="2.5" stroke-linejoin="round"/><circle cx="${x}" cy="36" r="17" fill="${c}" stroke="rgba(0,0,0,.5)" stroke-width="2.5"/><circle cx="${x - 6}" cy="30" r="5" fill="#fff" opacity=".5"/>`; }).join('')}<ellipse cx="48" cy="86" rx="${20 + side.length * 12}" ry="5" fill="#000" opacity=".25"/></svg>`;
     $('againBtn').hidden = net.mode === 'guest';
     if (statsGame !== gameId && !passPlay) { statsGame = gameId; stats.played++; if (mine) stats.won++; saveStats(); }
     sfx.win();
@@ -1242,10 +1308,11 @@ function advance() {
     if (party) confetti(); else { confettiRun++; try { $('confetti').hidePopover(); } catch (e) {} }
     return;
   }
+  if (!demo && S.turn !== ME && (passPlay ? !covered && person(S.turn) === person(ME) : isMine(S.turn))) switchSeat(S.turn);
   const mineNow = S.turn === ME && !S.players[S.turn].bot, fresh = !turnPlays || turnPlays.p !== S.turn || turnPlays.over;
   if (net.mode === 'guest') { if (mineNow && fresh) sfx.turn(); return; }
   if (S.players[S.turn].bot) { const id = gameId; setTimeout(() => { if (id === gameId) botTurn(); }, (demo ? SPEEDS.normal : SPEEDS[speed]).think); }
-  else if (passPlay && (S.turn !== ME || covered)) showPass();
+  else if (passPlay && (covered || person(S.turn) !== person(ME))) showPass();
   else { startClock(); if (mineNow) { if (fresh) sfx.turn(); } else pump(); }
 }
 let confettiRun = 0;
@@ -1313,7 +1380,8 @@ function beginGame(state, me, o) {
   o = o || {};
   demo = !!o.demo; passPlay = !!o.pass; covered = passPlay; handOrders = {}; clock = null;
   if (!demo) { leaveHome(); parked = null; }
-  S = state; ME = me;
+  S = state; ME = me; MINE = !demo && S.double ? E.mates(S, me) : [me];
+  applySeatColors();
   sel = null; busy = false; showing = false; lastCard = {}; logLines = []; turnPlays = null; turns = []; handOrder = []; dragging = null; gameId++;
   if (!demo) {
     const spin = -S.players[ME].seat * 60;
@@ -1324,7 +1392,7 @@ function beginGame(state, me, o) {
   buildPegs();
   const cut = S.cuts.map((c) => `${S.players[c.p].name} ${cardShort(c.card)}`).join(', ');
   const house = [!S.rules.jackSwapNeedsOwnPeg && 'Jack swaps any two pegs', S.rules.cornerIsFastTrack === false && 'corner pegs need not move first', S.rules.jokerBackOne && 'Joker can step back one'].filter(Boolean);
-  cutNote = `Cut for first turn: ${cut}. ${S.players[S.turn].name} ${S.turn === ME && !passPlay ? 'start' : 'starts'}.` + (S.teams ? ' Team game.' : '') + (house.length ? ` House rules: ${house.join('; ')}.` : '');
+  cutNote = `Cut for first turn: ${cut}. ${S.players[S.turn].name} ${S.turn === ME && !passPlay ? 'start' : 'starts'}.` + (S.double ? ' Two colors each.' : S.teams ? ' Team game.' : '') + (house.length ? ` House rules: ${house.join('; ')}.` : '');
   addLog(cutNote);
   renderCustomBox();
   $('modeTag').textContent = net.mode !== 'local' ? `Room ${net.code}` : passPlay ? 'Pass and play' : 'Playing bots';
@@ -1335,20 +1403,29 @@ function beginGame(state, me, o) {
 function myName() { const v = $('nameInp').value.trim().slice(0, 14); try { localStorage.setItem('ft-name', v); } catch (e) {} return v; }
 function gameOpts() {
   const n = +$('countSel').value, t = $('teamSel').value;
-  return { teams: t === 'pairs' && (n === 4 || n === 6) ? 'pairs' : t === 'triples' && n === 6 ? 'triples' : null,
+  return { teams: t === 'pairs' && (n === 4 || n === 6) ? 'pairs' : t === 'triples' && n === 6 ? 'triples' : null, double: t === 'double' && (n === 2 || n === 3),
     rules: { jackSwapNeedsOwnPeg: !$('hrJack').checked, cornerIsFastTrack: !$('hrCorner').checked, jokerBackOne: $('hrJoker').checked } };
 }
-function newGame(n, o) {
-  leaveNet();
-  const players = [{ name: myName() || 'You' }];
-  for (const name of botNames(n - 1, [players[0].name])) players.push({ name, bot: true });
-  beginGame(E.createGame({ players, ...(o || {}) }), 0);
+let myCols = null; // the color (or two) picked for yourself in a game against bots
+function tableColors(n, dbl, mine) { // defaults, with your own picks in the first seat and clashes moved to free colors
+  const cols = defaultColors(n, dbl);
+  if (!mine || mine.length !== cols[0].length) return cols;
+  cols[0] = [...mine];
+  const used = new Set(mine);
+  for (let i = 1; i < cols.length; i++) cols[i] = cols[i].map((c) => { if (!used.has(c)) { used.add(c); return c; } const f = [0, 1, 2, 3, 4, 5].find((x) => !used.has(x) && !cols.slice(i + 1).some((r) => r.includes(x))) ?? [0, 1, 2, 3, 4, 5].find((x) => !used.has(x)); used.add(f); return f; });
+  return cols;
 }
-function newPass(n, o) {
+function newGame(n, o, colors) {
+  leaveNet();
+  const people = [{ name: myName() || 'You' }];
+  for (const name of botNames(n - 1, [people[0].name])) people.push({ name, bot: true });
+  beginGame(makeGame(people, o, colors || tableColors(n, !!(o && o.double), myCols)), 0);
+}
+function newPass(n, o, colors) {
   leaveNet();
   const given = $('namesInp').value.split(',').map((x) => x.trim().slice(0, 14)).filter(Boolean);
-  const players = Array.from({ length: n }, (_, i) => ({ name: given[i] || `Player ${i + 1}` }));
-  beginGame(E.createGame({ players, ...(o || {}) }), 0, { pass: true });
+  const people = Array.from({ length: n }, (_, i) => ({ name: given[i] || `Player ${i + 1}` }));
+  beginGame(makeGame(people, o, colors), 0, { pass: true });
 }
 
 // ---------- home screen ----------
@@ -1356,7 +1433,7 @@ let cycleTimer = null, cycleIdx = 0, spinRaf = 0, viewBeforeHome = null;
 function startDemo() { beginGame(E.createGame({ players: botNames(6).map((name) => ({ name, bot: true })) }), 0, { demo: true }); }
 function goHome() {
   if (atHome) return;
-  if (S && !demo && net.mode === 'local' && S.winner === null && S.moveCount > 0) parked = { S, ME, turns, lastCard, passPlay, handOrder, handOrders, cutNote, turnPlays, logLines };
+  if (S && !demo && net.mode === 'local' && S.winner === null && S.moveCount > 0) parked = { S, ME, MINE, turns, lastCard, passPlay, handOrder, handOrders, cutNote, turnPlays, logLines };
   atHome = true; document.body.classList.add('home');
   $('resumeBtn').hidden = !parked; renderStats();
   viewBeforeHome = { ...view };
@@ -1376,7 +1453,8 @@ function leaveHome() {
 function resumeParked() {
   const g = parked; if (!g) return;
   leaveHome(); parked = null; demo = false; gameId++;
-  ({ S, ME, turns, lastCard, passPlay, handOrder, handOrders, cutNote, turnPlays, logLines } = g);
+  ({ S, ME, MINE, turns, lastCard, passPlay, handOrder, handOrders, cutNote, turnPlays, logLines } = g);
+  applySeatColors();
   sel = null; busy = false; showing = false; dragging = null; covered = passPlay; clock = null;
   homeSpin = -S.players[ME].seat * 60; view.spin = homeSpin; view.zoom = 1; view.px = 0; view.py = 0;
   applyView(); setViewSel(); buildPegs();
@@ -1396,7 +1474,7 @@ function menu() {
 // ---------- playing with friends ----------
 // The host's page runs the game and is the referee. Guests connect straight to it (peer to peer);
 // a public signalling service is only used to introduce the two browsers by room code.
-const net = { mode: 'local', peer: null, code: '', name: '', seats: 4, guests: [], hostConn: null, started: false, dropped: new Set(), needSync: [], queue: [], lobby: null, chain: Promise.resolve(), wake: null, failed: false, opts: null, timer: 0, server: false, owner: false, quick: false };
+const net = { mode: 'local', peer: null, code: '', name: '', seats: 4, guests: [], hostConn: null, started: false, dropped: new Set(), needSync: [], queue: [], lobby: null, chain: Promise.resolve(), wake: null, failed: false, opts: null, timer: 0, server: false, owner: false, quick: false, order: null, colors: null };
 const freshId = () => { try { return Array.from(crypto.getRandomValues(new Uint8Array(24)), (b) => b.toString(16).padStart(2, '0')).join(''); } catch (e) { return Math.random().toString(36).slice(2) + Date.now().toString(36) + Math.random().toString(36).slice(2); } };
 let clientId = (() => { try { let v = localStorage.getItem('ft-client'); if (!v) { v = freshId(); localStorage.setItem('ft-client', v); } return v; } catch (e) { return freshId(); } })();
 const peerId = (code) => 'fasttrack-room-' + code.toLowerCase();
@@ -1414,7 +1492,7 @@ function sendTo(g, msg) { try { if (g.conn && g.conn.open) g.conn.send(msg); } c
 function lobbyStatus(text) { $('lobbyStatus').textContent = text || ''; }
 function leaveNet() {
   const peer = net.peer;
-  Object.assign(net, { mode: 'local', peer: null, code: '', guests: [], hostConn: null, started: false, dropped: new Set(), needSync: [], queue: [], lobby: null, chain: Promise.resolve(), wake: null, failed: false, opts: null, timer: 0, server: false, owner: false, quick: false });
+  Object.assign(net, { mode: 'local', peer: null, code: '', guests: [], hostConn: null, started: false, dropped: new Set(), needSync: [], queue: [], lobby: null, chain: Promise.resolve(), wake: null, failed: false, opts: null, timer: 0, server: false, owner: false, quick: false, order: null, colors: null });
   if (peer) { try { peer.destroy(); } catch (e) {} }
 }
 function netError(err) {
@@ -1427,39 +1505,69 @@ function netError(err) {
   if ($('lobbyDlg').open) lobbyStatus(msg);
 }
 function fromView(v) { // a guest's picture of the game: everything but other hands and the draw piles
-  return { rules: v.rules, teams: v.teams || null, turn: v.turn, winner: v.winner, winners: v.winners || [], cuts: v.cuts, moveCount: v.moveCount, rng: 0,
+  return { rules: v.rules, teams: v.teams || null, ...(v.double ? { double: true } : {}), ...(v.colors ? { colors: v.colors } : {}), turn: v.turn, winner: v.winner, winners: v.winners || [], cuts: v.cuts, moveCount: v.moveCount, rng: 0,
     players: v.players.map((pl) => ({ seat: pl.seat, name: pl.name, bot: pl.bot, pegs: pl.pegs, hand: pl.hand || [], deck: [], discard: [] })) };
 }
 function openLobby() { renderLobby(); if (!$('lobbyDlg').open) $('lobbyDlg').showModal(); }
+/** Host of a browser-to-browser room: keep the seat list in step with who is here. 'H' is the host; null is a bot seat. */
+function tableSync() {
+  const dbl = !!(net.opts && net.opts.double), ids = ['H', ...net.guests.map((g) => g.id)];
+  net.seats = Math.max(ids.length, 2, Math.min(dbl ? 3 : 6, net.seats));
+  let order = (net.order || []).map((x) => (ids.includes(x) ? x : null));
+  for (const id of ids) if (!order.includes(id)) { const k = order.indexOf(null); if (k >= 0) order[k] = id; else order.push(id); }
+  while (order.length > net.seats && order.includes(null)) order.splice(order.lastIndexOf(null), 1);
+  while (order.length < net.seats) order.push(null);
+  net.order = order; net.seats = order.length;
+  if (!net.colors || net.colors.length !== order.length || (net.colors[0].length === 2) !== dbl) net.colors = defaultColors(order.length, dbl);
+}
+const slotName = (id) => (id === 'H' ? net.name : id ? (net.guests.find((g) => g.id === id) || {}).name || null : null);
 function renderLobby() {
   const p2pHost = net.mode === 'host', host = p2pHost || !!net.owner, list = $('lobbyList'); list.textContent = '';
   $('lobbyTitle').textContent = net.quick ? 'Quick match' : host ? 'Your private room' : `Room ${net.code}`;
   $('lobbyHost').hidden = !host || net.quick; $('lobbyStart').hidden = !host || net.quick; $('inviteRow').hidden = true;
   if (net.quick) return;
-  const seats = p2pHost ? net.seats : (net.lobby ? net.lobby.seats : 0);
-  const names = p2pHost ? [net.name + ' (you, host)', ...net.guests.map((g) => g.name)] : (net.lobby ? net.lobby.players.map((n, i) => n + (i === 0 ? ' (host)' : '') + (i === net.lobby.you ? ' (you)' : '')) : []);
-  const order = E.SEATS_FOR[Math.max(2, Math.min(6, seats || 2))];
-  for (let i = 0; i < Math.max(seats, names.length); i++) {
-    const li = document.createElement('li'), dot = document.createElement('span'), nm = document.createElement('span');
-    dot.className = 'dot'; dot.style.background = `var(--s${order[i] ?? 0})`;
-    nm.className = 'nm' + (i < names.length ? '' : ' bot'); nm.textContent = i < names.length ? names[i] : 'Bot (open seat)';
-    li.append(dot, nm);
-    if (host && i > 0 && i < names.length) {
-      if (net.server) li.appendChild(button('Remove', () => srvSend({ t: 'kick', idx: i })));
-      else { const g = net.guests[i - 1]; li.appendChild(button('Remove', () => { sendTo(g, { t: 'reject', why: 'The host removed you from this room.' }); const c = g.conn; setTimeout(() => { try { c.close(); } catch (e) {} }, 300); net.guests = net.guests.filter((x) => x !== g); broadcastLobby(); renderLobby(); })); }
+  if (p2pHost) tableSync();
+  const L = net.lobby || {}, o = net.opts || {}, dbl = !!o.double;
+  const names = p2pHost ? net.order.map(slotName) : (L.players || []), you = p2pHost ? net.order.indexOf('H') : L.you, hostIdx = p2pHost ? you : (L.hostIdx ?? 0);
+  const seats = names.length, colors = (p2pHost ? net.colors : L.colors) || defaultColors(Math.max(2, seats), dbl);
+  const n = dbl ? seats * 2 : seats, sides = dbl ? 0 : o.teams === 'pairs' && (n === 4 || n === 6) ? n / 2 : o.teams === 'triples' && n === 6 ? 2 : 0;
+  const tell = (m) => (net.server ? srvSend(m) : net.hostConn && net.hostConn.send(m));
+  names.forEach((name, i) => {
+    const li = document.createElement('li'), nm = document.createElement('span');
+    (colors[i] || []).forEach((c, k) => { // tap your own color to change it; the host can change anyone's
+      const can = host || i === you, sw = document.createElement(can ? 'button' : 'span');
+      sw.className = 'swatch'; sw.style.background = `var(--s${c})`;
+      if (can) { sw.type = 'button'; sw.setAttribute('aria-label', `Change ${name || 'bot'} color`); sw.title = 'Change color';
+        sw.onclick = () => { if (p2pHost) { cycleColor(net.colors, i, k); broadcastLobby(); renderLobby(); } else tell({ t: 'color', slot: i, k }); }; }
+      li.appendChild(sw);
+    });
+    nm.className = 'nm' + (name ? '' : ' bot'); nm.textContent = name ? name + (i === hostIdx ? ' (host)' : '') + (i === you ? ' (you)' : '') : 'Bot (open seat)';
+    li.appendChild(nm);
+    if (sides) { const tm = document.createElement('span'); tm.className = 'tm'; tm.textContent = 'Team ' + 'ABC'[i % sides]; li.appendChild(tm); }
+    if (host) {
+      const move = (to) => { if (p2pHost) { [net.order[i], net.order[to]] = [net.order[to], net.order[i]]; [net.colors[i], net.colors[to]] = [net.colors[to], net.colors[i]]; broadcastLobby(); renderLobby(); } else tell({ t: 'move', from: i, to }); };
+      const up = button('\u25B2', () => move(i - 1)), down = button('\u25BC', () => move(i + 1));
+      up.setAttribute('aria-label', 'Move up'); down.setAttribute('aria-label', 'Move down'); up.disabled = i === 0; down.disabled = i === seats - 1;
+      li.append(up, down);
+      if (name && i !== hostIdx) {
+        if (net.server) li.appendChild(button('Remove', () => srvSend({ t: 'kick', idx: i })));
+        else { const g = net.guests.find((x) => x.id === net.order[i]); li.appendChild(button('Remove', () => { sendTo(g, { t: 'reject', why: 'The host removed you from this room.' }); const c = g.conn; setTimeout(() => { try { c.close(); } catch (e) {} }, 300); net.guests = net.guests.filter((x) => x !== g); broadcastLobby(); renderLobby(); })); }
+      }
     }
     list.appendChild(li);
-  }
+  });
   if (!host) return;
-  const o = net.opts || {}, okTeams = o.teams === 'pairs' ? (seats === 4 || seats === 6) : o.teams === 'triples' ? seats === 6 : false;
-  $('lobbyInfo').textContent = [o.teams ? (okTeams ? (o.teams === 'pairs' ? 'Teams of two, partners sit opposite.' : 'Two teams of three.') : 'Teams need 4 or 6 players (two teams of three need 6), so this will be everyone for themselves.') : '',
-    o.pace === 'async' ? 'At your own pace: nobody has to stay online, and the game waits for each player.' : o.timer ? `${o.timer} second turn timer.` : '', 'Seats nobody takes are played by bots.'].filter(Boolean).join(' ');
-  $('roomCode').textContent = net.code; $('seatSel').value = String(seats); [...$('seatSel').options].forEach((op) => (op.disabled = +op.value < names.length));
+  $('lobbyInfo').textContent = [dbl ? 'Two colors each: everyone plays both of their colors, each with its own hand.'
+      : o.teams ? (sides ? 'Players with the same team letter are partners. Use the arrows to change who sits where.' : 'Teams need 4 or 6 players (two teams of three need 6), so this will be everyone for themselves.') : '',
+    o.pace === 'async' ? 'At your own pace: nobody has to stay online, and the game waits for each player.' : o.timer ? `${o.timer} second turn timer.` : '',
+    'Tap a color to change it. Seats nobody takes are played by bots.'].filter(Boolean).join(' ');
+  const people = names.filter(Boolean).length;
+  $('roomCode').textContent = net.code; $('seatSel').value = String(seats); [...$('seatSel').options].forEach((op) => (op.disabled = +op.value < people || (dbl && +op.value > 3)));
   const friends = net.server && account.user ? account.user.friends : [];
   $('inviteRow').hidden = !friends.length;
   if (friends.length) { const sel = $('friendSel'), keep = sel.value; sel.textContent = ''; friends.forEach((f) => { const op = document.createElement('option'); op.value = f.id; op.textContent = f.name + (f.online ? ' (online)' : ''); sel.appendChild(op); }); if (keep) sel.value = keep; }
 }
-function broadcastLobby() { net.guests.forEach((g, i) => sendTo(g, { t: 'lobby', seats: net.seats, players: [net.name, ...net.guests.map((x) => x.name)], you: i + 1 })); }
+function broadcastLobby() { tableSync(); const names = net.order.map(slotName); net.guests.forEach((g) => sendTo(g, { t: 'lobby', seats: net.seats, players: names, you: net.order.indexOf(g.id), hostIdx: net.order.indexOf('H'), opts: net.opts, colors: net.colors })); }
 
 function hostRoom(name, seats, opts) {
   if (serverUrl()) return serverRoom({ t: 'create', seats, opts }, name);
@@ -1497,7 +1605,7 @@ function hostOnData(conn, m) {
     }
     if (g) { g.conn = conn; g.name = name; g.seen = Date.now(); }
     else {
-      if (net.guests.length >= 5) { try { conn.send({ t: 'reject', why: 'This room is full.' }); } catch (e) {} return; }
+      if (net.guests.length >= (net.opts && net.opts.double ? 2 : 5)) { try { conn.send({ t: 'reject', why: 'This room is full.' }); } catch (e) {} return; }
       net.guests.push({ id, name, conn, idx: 0, seen: Date.now() });
       net.seats = Math.max(net.seats, net.guests.length + 1);
     }
@@ -1508,6 +1616,10 @@ function hostOnData(conn, m) {
     g.seen = Date.now();
     if (g.conn !== conn) { g.conn = conn; if (net.started) { net.dropped.delete(g.idx); net.needSync.push(g); if (!busy) { hostHousekeeping(); refresh(); } } } // back after being counted out
     try { conn.send({ t: 'pong' }); } catch (e) {}
+  } else if (m.t === 'color' && !net.started) {
+    const g = net.guests.find((x) => x.conn === conn); if (!g) return;
+    tableSync(); const slot = net.order.indexOf(g.id), k = +m.k;
+    if (slot === +m.slot && net.colors[slot] && k >= 0 && k < net.colors[slot].length) { cycleColor(net.colors, slot, k); broadcastLobby(); renderLobby(); }
   } else if (m.t === 'play') {
     const g = net.guests.find((x) => x.conn === conn);
     if (g && net.started) { net.queue.push({ idx: g.idx, cardId: m.cardId, key: String(m.key) }); pump(); }
@@ -1533,29 +1645,29 @@ setInterval(() => {
 }, 4000);
 /** Between moves: hand seats of dropped players to bots, and catch returning players up. */
 function hostHousekeeping() {
-  net.guests.forEach((g) => { if (S.players[g.idx]) S.players[g.idx].bot = net.dropped.has(g.idx); });
+  net.guests.forEach((g) => { for (const i of (S.double ? E.mates(S, g.idx) : [g.idx])) if (S.players[i]) S.players[i].bot = net.dropped.has(g.idx); });
   for (const g of net.needSync.splice(0)) sendTo(g, { t: 'sync', view: E.viewFor(S, g.idx), you: g.idx, code: net.code });
 }
 /** Play the next move a guest has sent, if it is really their turn and the move is legal. */
 function pump() {
   while (!busy && net.queue.length) {
     const q = net.queue.shift();
-    if (S.winner !== null || S.turn !== q.idx) continue;
+    if (S.winner !== null || !(S.double ? E.mates(S, q.idx) : [q.idx]).includes(S.turn)) continue;
     const move = E.legalMoves(S, q.cardId).find((m) => m.key === q.key);
     if (move) { play(q.cardId, move); return; }
   }
 }
 function hostStart() {
-  const players = [{ name: net.name }, ...net.guests.map((g) => ({ name: g.name }))];
-  for (const name of botNames(net.seats - players.length, players.map((x) => x.name))) players.push({ name, bot: true });
-  net.guests.forEach((g, i) => (g.idx = i + 1));
+  tableSync();
+  const o = net.opts || {}, humans = net.order.map(slotName).filter(Boolean), bots = botNames(net.order.filter((x) => !x).length, humans);
+  const people = net.order.map((id) => (id ? { name: slotName(id) } : { name: bots.pop(), bot: true }));
+  net.guests.forEach((g) => (g.idx = net.order.indexOf(g.id)));
   Object.assign(net, { started: true, dropped: new Set(), needSync: [], queue: [] });
-  const o = net.opts || {}, n = players.length;
   net.timer = o.timer || 0;
-  const state = E.createGame({ players, rules: o.rules, teams: o.teams === 'pairs' && (n === 4 || n === 6) ? 'pairs' : o.teams === 'triples' && n === 6 ? 'triples' : null });
+  const state = makeGame(people, o, net.colors);
   for (const g of net.guests) sendTo(g, { t: 'start', view: E.viewFor(state, g.idx), you: g.idx });
   if ($('lobbyDlg').open) $('lobbyDlg').close();
-  beginGame(state, 0);
+  beginGame(state, net.order.indexOf('H'));
 }
 
 function joinRoom(name, code) {
@@ -1705,16 +1817,17 @@ $('fitBtn').onclick = () => flyTo({ spin: homeSpin, zoom: 1, px: 0, py: 0 });
     tr.addEventListener('click', () => { more.hidden = !more.hidden; tr.classList.toggle('open', !more.hidden); btn.setAttribute('aria-expanded', String(!more.hidden)); });
   });
 
-  // Small drawings in the board's own colors.
-  const hole = (x, y) => `<circle cx="${x}" cy="${y}" r="2.6" fill="var(--hole)"/>`;
+  // Small drawings in fixed maple-board colors, so they stay readable on the tan tiles in every theme.
+  const PAL = ['#c8322b', '#2e8b4a', '#6d3fa0', '#e8742a', '#f0c020', '#1f6fc4'], INK = '#2a1f14', LANE = '#f6e6c2', HOLE = '#5d4023';
+  const hole = (x, y) => `<circle cx="${x}" cy="${y}" r="2.6" fill="${HOLE}"/>`;
   const holes = (x0, x1, y) => { let o = ''; for (let x = x0; x <= x1; x += 11) o += hole(x, y); return o; };
-  const strip = (x, y, w) => `<rect x="${x}" y="${y - 8}" width="${w}" height="16" rx="8" fill="var(--track)" stroke="var(--trackline)" stroke-width="1.2"/>`;
-  const peg = (x, y, c) => `<circle cx="${x}" cy="${y}" r="7" fill="var(--s${c})" stroke="rgba(0,0,0,.6)" stroke-width="1.5"/><circle cx="${x - 2.3}" cy="${y - 2.3}" r="1.9" fill="#fff" opacity=".55"/>`;
-  const arrow = (d) => `<path d="${d}" fill="none" stroke="var(--trackline)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ah)"/>`;
+  const strip = (x, y, w) => `<rect x="${x}" y="${y - 8}" width="${w}" height="16" rx="8" fill="${LANE}" stroke="${INK}" stroke-width="1.2"/>`;
+  const peg = (x, y, c) => `<circle cx="${x}" cy="${y}" r="7" fill="${PAL[c]}" stroke="rgba(0,0,0,.6)" stroke-width="1.5"/><circle cx="${x - 2.3}" cy="${y - 2.3}" r="1.9" fill="#fff" opacity=".55"/>`;
+  const arrow = (d) => `<path d="${d}" fill="none" stroke="${INK}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ah)"/>`;
   const cross = (x, y) => `<circle cx="${x}" cy="${y}" r="7" fill="#fff"/><path d="M${x - 3.5} ${y - 3.5}l7 7m0-7l-7 7" stroke="#d92d3a" stroke-width="2.6" stroke-linecap="round"/>`;
   const tick = (x, y) => `<circle cx="${x}" cy="${y}" r="7" fill="#fff"/><path d="M${x - 3.5} ${y}l2.6 3 4.6-6" fill="none" stroke="#1f9d55" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`;
-  const card = (x, y, t, red) => `<rect x="${x}" y="${y}" width="17" height="24" rx="3" fill="var(--card)" stroke="rgba(0,0,0,.45)"/><text x="${x + 8.5}" y="${y + 16.5}" text-anchor="middle" font-size="11.5" font-weight="700" font-family="Georgia, serif" fill="${red ? 'var(--cardred)' : 'var(--cardink)'}">${t}</text>`;
-  const word = (x, y, t) => `<text x="${x}" y="${y}" text-anchor="middle" font-size="12" font-weight="700" font-family="Georgia, serif" fill="var(--trackline)">${t}</text>`;
+  const card = (x, y, t, red) => `<rect x="${x}" y="${y}" width="17" height="24" rx="3" fill="#fffdf6" stroke="rgba(0,0,0,.45)"/><text x="${x + 8.5}" y="${y + 16.5}" text-anchor="middle" font-size="11.5" font-weight="700" font-family="Georgia, serif" fill="${red ? '#b8261f' : '#1d1a16'}">${t}</text>`;
+  const word = (x, y, t) => `<text x="${x}" y="${y}" text-anchor="middle" font-size="12" font-weight="700" font-family="Georgia, serif" fill="${INK}">${t}</text>`;
   const hex = (k) => { const a = (k * 60 - 90) * Math.PI / 180; return [60 + 21 * Math.cos(a), 28 + 21 * Math.sin(a)]; };
   const facts = [
     ['Your turn', 'Hold 5 cards. Play 1, then draw back up to 5.',
@@ -1722,23 +1835,23 @@ $('fitBtn').onclick = () => flyTo({ spin: homeSpin, zoom: 1, px: 0, py: 0 });
     ['When you’re stuck', 'No peg can go forward? One goes back that many.',
       strip(8, 34, 104) + holes(17, 105, 34) + peg(72, 34, 0) + peg(94, 34, 0) + arrow('M66 22C56 8 36 8 28 22') + cross(84, 14)],
     ['Bumping', 'Land on a rival and it goes back to its pen.',
-      strip(8, 20, 84) + holes(17, 83, 20) + peg(24, 20, 0) + peg(68, 20, 5) + arrow('M30 10C40 0 54 0 62 10') + `<polygon points="88,52 114,52 101,32" fill="var(--s5)" stroke="rgba(0,0,0,.4)"/>` + arrow('M74 28L92 42')],
+      strip(8, 20, 84) + holes(17, 83, 20) + peg(24, 20, 0) + peg(68, 20, 5) + arrow('M30 10C40 0 54 0 62 10') + `<polygon points="88,52 114,52 101,32" fill="${PAL[5]}" stroke="rgba(0,0,0,.4)"/>` + arrow('M74 28L92 42')],
     ['Your own pegs', 'Never land on or jump over your own color.',
       strip(8, 36, 104) + holes(17, 105, 36) + peg(28, 36, 0) + peg(61, 36, 0) + arrow('M32 26C44 6 78 6 90 26') + cross(61, 12)],
     ['Home', 'You need the exact count to get in. Pegs at home are safe.',
-      strip(6, 36, 54) + holes(14, 47, 36) + `<rect x="62" y="28" width="52" height="16" rx="8" fill="var(--s0)" stroke="var(--trackline)" stroke-width="1.2"/>` + holes(71, 104, 36) + peg(25, 36, 0) + arrow('M30 26C46 6 78 6 90 26') + tick(60, 12)],
+      strip(6, 36, 54) + holes(14, 47, 36) + `<rect x="62" y="28" width="52" height="16" rx="8" fill="${PAL[0]}" stroke="${INK}" stroke-width="1.2"/>` + holes(71, 104, 36) + peg(25, 36, 0) + arrow('M30 26C46 6 78 6 90 26') + tick(60, 12)],
     ['Fast track', 'Land exactly on a corner and hop corner to corner to your own color. That peg has to move first.',
-      `<polygon points="${[0, 1, 2, 3, 4, 5].map((k) => hex(k).map((v) => v.toFixed(1)).join(',')).join(' ')}" fill="var(--track)" stroke="var(--trackline)" stroke-width="1.2"/>`
-      + [0, 1, 2, 3, 4, 5].map((k) => { const [x, y] = hex(k); return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="var(--s${k})" stroke="rgba(0,0,0,.5)"/>`; }).join('')
+      `<polygon points="${[0, 1, 2, 3, 4, 5].map((k) => hex(k).map((v) => v.toFixed(1)).join(',')).join(' ')}" fill="${LANE}" stroke="${INK}" stroke-width="1.2"/>`
+      + [0, 1, 2, 3, 4, 5].map((k) => { const [x, y] = hex(k); return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="${PAL[k]}" stroke="rgba(0,0,0,.5)"/>`; }).join('')
       + peg(hex(4)[0], hex(4)[1], 0) + arrow('M36 8C46 -2 74 -2 86 8') + arrow('M92 18C100 26 100 34 92 42')],
     ['Bull’s eye', 'Go one step past a corner to drop into the center. Only a King, Queen or Jack gets you out.',
-      `<circle cx="30" cy="28" r="15" fill="var(--track)" stroke="var(--trackline)" stroke-width="1.2"/><circle cx="30" cy="28" r="9" fill="none" stroke="var(--trackline)" stroke-width="1"/>` + peg(30, 28, 0) + arrow('M48 28H62') + card(68, 16, 'K') + card(84, 16, 'Q', 1) + card(100, 16, 'J')],
+      `<circle cx="30" cy="28" r="15" fill="${LANE}" stroke="${INK}" stroke-width="1.2"/><circle cx="30" cy="28" r="9" fill="none" stroke="${INK}" stroke-width="1"/>` + peg(30, 28, 0) + arrow('M48 28H62') + card(68, 16, 'K') + card(84, 16, 'Q', 1) + card(100, 16, 'J')],
     ['Splitting a 7', 'A 7 can be shared between two of your pegs.',
       card(8, 16, '7') + word(36, 33, '=') + peg(54, 34, 0) + word(54, 18, '3') + word(74, 33, '+') + peg(94, 34, 0) + word(94, 18, '4')],
   ];
   facts.forEach(([title, text, art]) => {
     const el = document.createElement('div'); el.className = 'fact';
-    el.innerHTML = `<svg viewBox="0 0 120 56" role="img" aria-label="${title}"><defs><marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M1 1L8 5L1 9" fill="none" stroke="var(--trackline)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>${art}</svg><span><b></b></span>`;
+    el.innerHTML = `<svg viewBox="0 0 120 56" role="img" aria-label="${title}"><defs><marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M1 1L8 5L1 9" fill="none" stroke="${INK}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>${art}</svg><span><b></b></span>`;
     el.querySelector('b').textContent = title; el.querySelector('span').appendChild(document.createTextNode(text));
     $('factGrid').appendChild(el);
   });
@@ -1918,14 +2031,26 @@ function showMode() {
   $('namesRow').hidden = mode !== 'pass'; $('codeRow').hidden = mode !== 'join';
   $('paceRow').hidden = !(mode === 'host' && serverUrl()); $('timerRow').hidden = mode !== 'host' || (!$('paceRow').hidden && $('paceChk').checked);
   $('newTitle').textContent = mode === 'bots' ? 'Play against bots' : mode === 'pass' ? 'Pass and play' : mode === 'host' ? 'Invite friends' : 'Join a room';
-  const t = $('teamSel'); t.options[1].disabled = !(n === 4 || n === 6); t.options[2].disabled = n !== 6;
+  const t = $('teamSel'); t.options[1].disabled = !(n === 4 || n === 6); t.options[2].disabled = n !== 6; t.options[3].disabled = !(n === 2 || n === 3);
   if (t.selectedOptions[0] && t.selectedOptions[0].disabled) t.value = '';
+  const dbl = t.value === 'double';
+  // Your own color(s), for a game against bots. In rooms everyone picks theirs in the room list.
+  $('colorRow').hidden = mode !== 'bots'; $('colorLab').textContent = dbl ? 'Your colors' : 'Your color';
+  if (!myCols || myCols.length !== (dbl ? 2 : 1)) myCols = [...defaultColors(n, dbl)[0]];
+  const sw = $('mySwatches'); sw.textContent = '';
+  myCols.forEach((c, k) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'swatch'; b.style.background = `var(--s${c})`; b.setAttribute('aria-label', 'Change color'); b.title = 'Change color';
+    b.onclick = () => { cycleColor([myCols], 0, k); showMode(); }; sw.appendChild(b); });
+  const teamNote = !setup ? '' : dbl ? ' Two colors each: you play both of your colors, each with its own hand of five.'
+    : t.value === 'pairs' ? (mode === 'pass' ? (n === 4 ? ' Partners: players 1 and 3 against 2 and 4.' : ' Partners: 1 and 4, 2 and 5, 3 and 6.') : mode === 'host' ? ' You set who partners whom in the room, before you start.' : ' Your partner sits opposite you.')
+    : t.value === 'triples' ? (mode === 'pass' ? ' Teams: players 1, 3 and 5 against 2, 4 and 6.' : mode === 'host' ? ' You set the teams in the room, before you start.' : '') : '';
   $('startBtn').textContent = mode === 'bots' || mode === 'pass' ? 'Deal' : mode === 'host' ? 'Create room' : 'Join room';
   $('modeHint').textContent = mode === 'bots' ? 'You against computer players.'
     : mode === 'pass' ? 'Everyone shares this device. Hands stay hidden until each player takes it.'
     : mode === 'host' ? 'You get a room code and link to send. You choose when to start, and bots fill any empty seats.'
     : 'Enter the room code your friend sent you.';
+  $('modeHint').textContent += teamNote;
 }
+$('teamSel').onchange = showMode;
 $('countSel').onchange = showMode;
 document.querySelectorAll('input[name=mode]').forEach((r) => (r.onchange = showMode));
 function openNew(mode, code) {
@@ -1984,7 +2109,7 @@ $('winHome').onclick = () => { $('winDlg').close(); menu(); };
 $('passDlg').addEventListener('cancel', (e) => e.preventDefault());
 $('passOk').onclick = () => {
   $('passDlg').close();
-  handOrders[ME] = handOrder; ME = S.turn; handOrder = handOrders[ME] || []; covered = false;
+  handOrders[ME] = handOrder; ME = S.turn; MINE = S.double ? E.mates(S, ME) : [ME]; handOrder = handOrders[ME] || []; covered = false;
   homeSpin = -S.players[ME].seat * 60;
   flyTo({ spin: homeSpin, zoom: 1, px: 0, py: 0 });
   refresh();
@@ -2027,10 +2152,12 @@ $('winClose').onclick = () => $('winDlg').close();
 $('againBtn').onclick = () => {
   $('winDlg').close();
   if (net.mode === 'host') return hostStart();
-  const o = { rules: S.rules, teams: S.teams ? (S.players.length === 6 && new Set(S.teams).size === 2 ? 'triples' : 'pairs') : null };
-  if (passPlay) { $('namesInp').value = S.players.map((x) => x.name).join(', '); newPass(S.players.length, o); } else newGame(S.players.length, o);
+  const dbl = !!S.double, P = dbl ? S.players.length / 2 : S.players.length;
+  const o = { rules: S.rules, double: dbl, teams: dbl || !S.teams ? null : (S.players.length === 6 && new Set(S.teams).size === 2 ? 'triples' : 'pairs') };
+  const cols = S.colors ? Array.from({ length: P }, (_, i) => (dbl ? [S.colors[i], S.colors[i + P]] : [S.colors[i]])) : undefined;
+  if (passPlay) { $('namesInp').value = S.players.slice(0, P).map((x) => x.name).join(', '); newPass(P, o, cols); } else newGame(P, o, cols);
 };
-window.__ft = { get state() { return S; }, get me() { return ME; }, get net() { return net; }, get atHome() { return atHome; }, get account() { return account; }, showWin: (p) => { S.winner = p; S.winners = E.mates(S, p); advance(); }, // for trying the end screens
+window.__ft = { get state() { return S; }, get me() { return ME; }, get net() { return net; }, get atHome() { return atHome; }, get mine() { return MINE; }, get account() { return account; }, showWin: (p) => { S.winner = p; S.winners = E.mates(S, p); advance(); }, // for trying the end screens
   get theme() { return theme.id; }, applyTheme, flyTo, newGame, goHome, setSpeed: (v) => { speed = v; } };
 goHome();
 { const m = /^#join-([A-Za-z0-9]{5,6})$/.exec(location.hash); if (m) openNew('modeJoin', m[1].toUpperCase()); } // opened from an invite link
